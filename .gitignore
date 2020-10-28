@@ -1,9 +1,10 @@
 bin/
 build/
 gradle/
+nbproject/
 .gradle/
 .vscode/
-nbproject/
+.settings/
 
 .classpath
 .project

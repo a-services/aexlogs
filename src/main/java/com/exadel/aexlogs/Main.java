@@ -108,7 +108,7 @@ public class Main {
         
         /* Save output file
          */
-        Files.writeString(Paths.get(outputFile), report);
+        Files.write(Paths.get(outputFile), report.getBytes());
         out.println("Output file: " + outputFile);
         out.println("-----------------------");
     }
