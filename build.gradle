@@ -11,9 +11,22 @@ repositories {
     jcenter()
 }
 
+task fatjar(type: Jar) {
+    manifest { 
+        attributes "Main-Class": "com.exadel.aexlogs.Main"
+    }  
+    baseName = "aexlogs-all"
+    from {
+        configurations.compileClasspath.filter{ it.exists() }
+            .collect { it.isDirectory() ? it : zipTree(it) }
+    }  
+    with jar
+}
+
 dependencies {
     implementation 'org.jsoup:jsoup:1.9.2'
     implementation 'org.thymeleaf:thymeleaf:3.0.11.RELEASE'
     implementation 'org.slf4j:slf4j-simple:1.7.30'
     testImplementation 'junit:junit:4.13'
 }
+
