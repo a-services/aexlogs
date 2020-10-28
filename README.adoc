@@ -1,0 +1,14 @@
+= aexlogs: Analyze logs from Standalone API Express
+
+```
+Parameters: inputFile outputFile
+```
+
+where:
+
+inputFile::
+File name in HTML format received from link:https://github.com/a-services/exc[exc] utility
+
+outputFile::
+File name in HTML format with information about
+REST requests passing through link:https://appery.io/api-express/[Standalone API Express]

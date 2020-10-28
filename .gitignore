@@ -1,0 +1,10 @@
+bin/
+build/
+gradle/
+.gradle/
+.vscode/
+nbproject/
+
+.classpath
+.project
+README.html

@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>AEX Requests</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+    <table border=1>
+      <tr>
+        <th>DATE</th>
+        <th>ID</th>
+        <th>METHOD</th>
+        <th>URL</th>
+        <th>RESPONSE</th>
+      </tr>
+      <tr th:each="req : ${aexRequests}">
+        <td th:text="${req.tstamp}">2020-10-27 11:27:40,234</td>
+        <td th:text="${req.id}">c5f91a2b-a302-483d-8c35-7e4cca67b47e</td>
+        <td th:text="${req.method}">POST</td>
+        <td th:text="${req.url}">https://northwell.dev.appery.io/apiexpress-api/security/login</td>
+        <td th:text="${req.response}">{}</td>
+      </tr>
+    </table>
+</body>
+</html>
