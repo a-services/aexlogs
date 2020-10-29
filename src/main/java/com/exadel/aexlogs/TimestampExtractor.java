@@ -7,7 +7,7 @@ import java.util.Date;
  * Extract timestamp from the beginning of the log line
  * in commonly used `yyyy-MM-dd HH:mm:ss.SSS` format.
  *
- * Or you can set your own timestamp format with `setDateFormat()`. 
+ * Or you can set your own timestamp format with `setDateFormat()`.
  */
 public class TimestampExtractor {
 
@@ -28,10 +28,13 @@ public class TimestampExtractor {
         try {
             String tstamp = line.substring(0, dfLen);
             return df.parse(tstamp);
-            
+
         } catch (Exception e) {
             return null;
         }
     }
-    
+
+    public String format(Date date) {
+        return df.format(date);
+    }
 }

@@ -1,18 +1,36 @@
 package com.exadel.aexlogs;
 
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.List;
 
-public class RequestLine {
+public class RequestLine implements Comparable<RequestLine> {
 
+    private int startLine;
+
+    public int getStartLine() {
+        return startLine;
+    }
+
+    public void setStartLine(int startLine) {
+        this.startLine = startLine;
+    }
+
+    public int getEndLine() {
+        return endLine;
+    }
+
+    public void setEndLine(int endLine) {
+        this.endLine = endLine;
+    }
+    private int endLine;
     private Date tstamp;
     private String id;
     private String projectId;
     private String method;
     private String url;
 
-    private Map<String, String> params = new TreeMap<>();
+    private List<Param> params = new ArrayList<>();
     
     private StringBuilder body;
     private String response;
@@ -54,16 +72,20 @@ public class RequestLine {
     public String getUrl() {
         return url;
     }
+    
+    public boolean isLoginUrl() {
+        return url.endsWith("/apiexpress-api/security/login");
+    }
 
     public void setUrl(String url) {
         this.url = url;
     }
 
-    public Map<String, String> getParams() {
+    public List<Param> getParams() {
         return params;
     }
 
-    public void setParams(Map<String, String> params) {
+    public void setParams(List<Param> params) {
         this.params = params;
     }
 
@@ -91,4 +113,8 @@ public class RequestLine {
         this.millis = millis;
     }
 
+    @Override
+    public int compareTo(RequestLine req) {
+        return startLine - req.getStartLine();
+    }
 }

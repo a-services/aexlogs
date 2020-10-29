@@ -65,11 +65,12 @@ public class TestMain {
         req = main.reqLines.get("c5f91a2b-a302-483d-8c35-7e4cca67b47e");
         assertEquals(req.getId(), "c5f91a2b-a302-483d-8c35-7e4cca67b47e");
         assertEquals(req.getParams().size(), 1);
-        String value = req.getParams().get("apiKey");
-        assertEquals(value, "ab0ce6d1-8d24-4c39-b6e7-f9be307dd4bb");
+        Param param = req.getParams().get(0);
+        assertEquals(param.getName(), "apiKey");
+        assertEquals(param.getValue(), "ab0ce6d1-8d24-4c39-b6e7-f9be307dd4bb");
         
         /* Test Body extraction
-         
+         */
         ll.text = "2020-10-27 11:27:40,248 "
                 + "INFO [com.exadel.appery.mobilesrv.api.runtime.ServiceRuntimeRestService] "
                 + "(default task-1) c5f91a2b-a302-483d-8c35-7e4cca67b47e ---- Start Body Request:";
@@ -83,14 +84,13 @@ public class TestMain {
         ll.text = "---- End Body Request";
         main.appendBody(ll);
         assertFalse(main.bodyMode);
-        assertEquals(req.body.toString(), "{\"username\":\"s\",\"options\":{}}");
+        assertEquals(req.getBody().toString(), "{\"username\":\"s\",\"options\":{}}");
         
         ll.text = "2020-10-27 11:27:40,256 "
                 + "INFO [com.exadel.appery.mobilesrv.model.utils.LogHelper] "
                 + "(default task-1) c5f91a2b-a302-483d-8c35-7e4cca67b47e "
                 + "Request. Finished execution of endpoint logic. Time spent 20 millis";
         main.closeRequest(ll);
-        assertEquals(req.millis, 20);
-        */
+        assertEquals(req.getMillis(), 20);
     }
 }

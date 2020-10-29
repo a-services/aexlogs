@@ -9,9 +9,13 @@ import java.nio.file.Paths;
 import java.util.Date;
 import java.text.MessageFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -20,10 +24,25 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-public class Main {
+@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.0")
+public class Main implements Callable<Integer> {
+
+    @Option(names = {"-f", "--file"}, 
+            required = true,
+            description="File names in HTML format received from `exc`.")
+    List<String> inputFiles;
+
+    @Parameters(index = "0", description="File name in HTML format "
+            + "with information about REST requests passing through Standalone API Express.")
+    String outputFile;
 
     /* Signatures in log.
      */
@@ -37,35 +56,63 @@ public class Main {
      * Collects requests mapped by `requestId`
      */
     Map<String, RequestLine> reqLines;
-    
+
     /**
      * Opens special mode to collect request body.
      */
     boolean bodyMode;
-    
+
     /**
      * Current request used to collect request body.
      */
     RequestLine curReq;
-        
-    public static void main(String[] args) throws Exception {
-        if (args.length < 2) {
-            out.println("[ERROR] Parameters: inputFile outputFile");
-            return;
-        }
-        new Main().main(args[0], args[1]);
+
+    public static void main(String[] args) {
+        System.exit(new CommandLine(new Main()).execute(args));
     }
 
-    /**
-     * @param inputFile   File name in HTML format received from `exc`.
-     * @param outputFile  File name in HTML format with information about 
-     *                    REST requests passing through Standalone API Express.
-     */
-    void main(String inputFile, String outputFile) throws Exception {
+    @Override
+    public Integer call() {
+        try {
+            out.println("-----------------------");
+            
+            /* Process input files
+             */
+           List<RequestLine> aexRequests = new ArrayList<>();
+           for (String inputFile: inputFiles) {
+                process(inputFile);
+                List<RequestLine> rex = new ArrayList(reqLines.values());
+                Collections.sort(rex);
+                aexRequests.addAll(rex);
+            }
+
+            /* Generate report
+             */
+            TemplateEngine templateEngine = new TemplateEngine();
+            ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+            templateResolver.setTemplateMode("HTML");
+            templateEngine.setTemplateResolver(templateResolver);
+            Context context = new Context();
+            context.setVariable("aexRequests", aexRequests);
+            String report = templateEngine.process("templates/aexlogs-bootstrap.html", context);
+
+            /* Save output file
+             */
+            Files.write(Paths.get(outputFile), report.getBytes());
+            out.println("Output file: " + outputFile);
+            out.println("-----------------------");
+            return 0;
+            
+        } catch (IOException e) {
+            out.println("[ERROR] " + e.getMessage());
+            return 1;
+        }
+    }
+
+    void process(String inputFile) throws IOException {
 
         /* Load and parse file specified as command-line parameter.
          */
-        out.println("-----------------------");
         out.println("Input file: " + inputFile);
 
         Document doc = Jsoup.parse(new File(inputFile), "UTF-8");
@@ -91,26 +138,6 @@ public class Main {
                 }
             }
         }
-        
-        /* Create requests list
-         */
-        Collection<RequestLine> aexRequests = reqLines.values();
-        
-        /* Generate report
-         */
-        TemplateEngine templateEngine = new TemplateEngine();
-        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-        templateResolver.setTemplateMode("HTML");
-        templateEngine.setTemplateResolver(templateResolver);
-        Context context = new Context();
-        context.setVariable("aexRequests", aexRequests);
-        String report = templateEngine.process("templates/aexlogs.html", context);
-        
-        /* Save output file
-         */
-        Files.write(Paths.get(outputFile), report.getBytes());
-        out.println("Output file: " + outputFile);
-        out.println("-----------------------");
     }
 
     /**
@@ -132,6 +159,7 @@ public class Main {
             String requestId = (String) res[0];
             String projectId = (String) res[1];
             RequestLine req = new RequestLine();
+            req.setStartLine(ll.lno);
             req.setTstamp(d);
             req.setId(requestId.trim());
             req.setProjectId(projectId.trim());
@@ -156,7 +184,18 @@ public class Main {
         String requestId = msg.substring(0, k);
         RequestLine req = reqLines.get(requestId);
         if (req == null) {
-            return;
+            
+            /* Request with this id not found, create a new one.
+             */
+            Date d = tse.extractTimestamp(ll.text);
+            if (d == null) {
+                return;
+            }
+            req = new RequestLine();
+            req.setStartLine(ll.lno);
+            req.setTstamp(d);
+            req.setId(requestId.trim());
+            reqLines.put(req.getId(), req);
         }
         msg = msg.substring(k);
 
@@ -165,13 +204,13 @@ public class Main {
         final String PARAM = " Parameter: ";
         final String START_BODY = "---- Start Body Request:";
         final String RESPONSE = " Response: ";
-        
+
         if (msg.startsWith(METHOD)) {
             req.setMethod(msg.substring(METHOD.length()));
-        } else 
+        } else
         if (msg.startsWith(URL)) {
             req.setUrl(msg.substring(URL.length()));
-        } else 
+        } else
         if (msg.startsWith(PARAM)) {
             String p = msg.substring(PARAM.length());
             k = p.indexOf("=");
@@ -180,15 +219,15 @@ public class Main {
             }
             String name = p.substring(0,k);
             String value = p.substring(k+1);
-            req.getParams().put(name, value);
+            req.getParams().add(new Param(name, value));
         } else
-        /*if (msg.endsWith(START_BODY)) {
+        if (msg.endsWith(START_BODY)) {
             bodyMode = true;
             curReq = req;
-        } else*/
+        } else
         if (msg.startsWith(RESPONSE)) {
             req.setResponse(msg.substring(RESPONSE.length()));
-        }    
+        }
     }
 
     /**
@@ -210,15 +249,16 @@ public class Main {
             return;
         }
         msg = msg.substring(k);
-        
+
         final MessageFormat mf = new MessageFormat(" Request. Finished execution of endpoint logic. Time spent {0} millis");
         try {
             Object[] res = mf.parse(msg);
             req.setMillis(Integer.parseInt((String) res[0]));
+            req.setEndLine(ll.lno);
         } catch (ParseException ex) {
             return;
         }
-        
+
     }
 
     /**
@@ -243,19 +283,19 @@ public class Main {
         }
         return result;
     }
-    
+
     /**
      * Process special mode to collect request body.
      */
     void appendBody(LogLine ll) {
 
         final String END_BODY = "---- End Body Request";
-        
+
         if (END_BODY.equals(ll.text)) {
             bodyMode = false;
             return;
         }
-        
+
         if (curReq.getBody() == null) {
             curReq.setBody(new StringBuilder());
             curReq.getBody().append(ll.text);
