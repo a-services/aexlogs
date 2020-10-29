@@ -204,12 +204,16 @@ public class Main implements Callable<Integer> {
         final String PARAM = " Parameter: ";
         final String START_BODY = "---- Start Body Request:";
         final String RESPONSE = " Response: ";
+        final String USER = " User: ";
 
         if (msg.startsWith(METHOD)) {
             req.setMethod(msg.substring(METHOD.length()));
         } else
         if (msg.startsWith(URL)) {
             req.setUrl(msg.substring(URL.length()));
+        } else
+        if (msg.startsWith(USER)) {
+            req.setUser(msg.substring(USER.length()));
         } else
         if (msg.startsWith(PARAM)) {
             String p = msg.substring(PARAM.length());

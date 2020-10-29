@@ -29,6 +29,7 @@ public class RequestLine implements Comparable<RequestLine> {
     private String projectId;
     private String method;
     private String url;
+    private String user;
 
     private List<Param> params = new ArrayList<>();
     
@@ -36,6 +37,14 @@ public class RequestLine implements Comparable<RequestLine> {
     private String response;
     
     private int millis;
+    
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
 
     public Date getTstamp() {
         return tstamp;

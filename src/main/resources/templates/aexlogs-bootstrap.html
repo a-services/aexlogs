@@ -44,6 +44,12 @@
             </dl>              
           </div>
         </div>
+        <div class="row" th:if="${req.user}">
+          <div class="col-sm-2">USER</div>
+          <div class="col-sm-10">
+            <pre><code th:text="${req.user}">s</code></pre>            
+          </div>
+        </div>
         <div class="row">
           <div class="col-sm-2">BODY:</div>
           <div class="col-sm-10">
@@ -57,7 +63,7 @@
           </div>
         </div>
         <div class="row">
-          <div class="col-sm">
+          <div class="col-sm text-right">
             Request
             <code th:text="${req.id}">c5f91a2b-a302-483d-8c35-7e4cca67b47e</code>
             completed in
