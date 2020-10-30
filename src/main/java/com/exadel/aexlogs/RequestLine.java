@@ -32,12 +32,12 @@ public class RequestLine implements Comparable<RequestLine> {
     private String user;
 
     private List<Param> params = new ArrayList<>();
-    
+
     private StringBuilder body;
     private String response;
-    
+
     private int millis;
-    
+
     public String getUser() {
         return user;
     }
@@ -81,9 +81,9 @@ public class RequestLine implements Comparable<RequestLine> {
     public String getUrl() {
         return url;
     }
-    
+
     public boolean isLoginUrl() {
-        return url.endsWith("/apiexpress-api/security/login");
+        return url!=null && url.endsWith("/apiexpress-api/security/login");
     }
 
     public void setUrl(String url) {
