@@ -9,3 +9,7 @@ Usage: aexlogs [-hV] [-f=<inputFiles>]... <outputFile>
   -h, --help                Show this help message and exit.
   -V, --version             Print version information and exit.
 ----
+
+See also::
+- link:https://appery.io/api-express/[Standalone API Express]
+- link:https://github.com/a-services/exc[exc]
