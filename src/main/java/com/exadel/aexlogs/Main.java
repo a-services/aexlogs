@@ -10,12 +10,13 @@ import java.util.Date;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -32,15 +33,19 @@ import picocli.CommandLine.Parameters;
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.0")
+@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.1")
 public class Main implements Callable<Integer> {
 
-    @Option(names = {"-f", "--file"}, 
-            required = true,
-            description="File names in HTML format received from `exc`.")
+    @Option(names = { "-f", "--file" }, required = true,
+            description = "File names in HTML format received from `exc`.")
     List<String> inputFiles;
 
-    @Parameters(index = "0", description="File name in HTML format "
+    @Option(names = { "-r", "--rest" }, required = false,
+            description = "Track only specified REST requests.")
+    List<String> filterRestServices;
+
+    @Parameters(index = "0",
+            description = "File name in HTML format "
             + "with information about REST requests passing through Standalone API Express.")
     String outputFile;
 
@@ -75,16 +80,30 @@ public class Main implements Callable<Integer> {
     public Integer call() {
         try {
             out.println("-----------------------");
-            
+
             /* Process input files
              */
-           List<RequestLine> aexRequests = new ArrayList<>();
-           for (String inputFile: inputFiles) {
+            List<RequestLine> aexRequests = new ArrayList<>();
+            for (String inputFile : inputFiles) {
                 process(inputFile);
                 List<RequestLine> rex = new ArrayList(reqLines.values());
                 Collections.sort(rex);
                 aexRequests.addAll(rex);
             }
+
+            /* Filter requests if needed
+             */
+            if (filterRestServices != null) {
+                aexRequests = aexRequests.stream().filter(this::inFilteredServices).collect(Collectors.toList());
+            }
+
+            /* Do not generate report if no aex requests found
+             */
+            if (aexRequests.size()==0) {
+                out.println("[ERROR] No AEX requests found");
+                return 1;
+            }
+            out.println(aexRequests.size() + " AEX request(s) found");
 
             /* Generate report
              */
@@ -102,11 +121,22 @@ public class Main implements Callable<Integer> {
             out.println("Output file: " + outputFile);
             out.println("-----------------------");
             return 0;
-            
+
         } catch (IOException e) {
             out.println("[ERROR] " + e.getMessage());
             return 1;
         }
+    }
+
+    boolean inFilteredServices(RequestLine rex) {
+        Iterator<String> iter = filterRestServices.iterator();
+        while (iter.hasNext()) {
+            String serviceName = iter.next();
+            if (rex.getUrl() != null && rex.getUrl().endsWith("/" + serviceName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void process(String inputFile) throws IOException {
@@ -184,7 +214,7 @@ public class Main implements Callable<Integer> {
         String requestId = msg.substring(0, k);
         RequestLine req = reqLines.get(requestId);
         if (req == null) {
-            
+
             /* Request with this id not found, create a new one.
              */
             Date d = tse.extractTimestamp(ll.text);

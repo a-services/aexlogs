@@ -1,12 +1,15 @@
 = Analyze logs from Standalone API Express
 
 ----
-Usage: aexlogs [-hV] [-f=<inputFiles>]... <outputFile>
+Usage: aexlogs [-hV] -f=<inputFiles> [-f=<inputFiles>]...
+               [-r=<filterRestServices>]... <outputFile>
       <outputFile>          File name in HTML format with information about
                               REST requests passing through Standalone API
                               Express.
   -f, --file=<inputFiles>   File names in HTML format received from `exc`.
   -h, --help                Show this help message and exit.
+  -r, --rest=<filterRestServices>
+                            Track only specified REST requests.
   -V, --version             Print version information and exit.
 ----
 

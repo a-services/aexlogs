@@ -17,20 +17,21 @@
 
     <div class="container">
 
-      <p class="lead">API EXPRESS REQUESTS from 
+      <p class="lead" th:if="${#lists.size(aexRequests)} > 0">API EXPRESS REQUESTS
+        from
         <span th:text="${#dates.format(aexRequests[0].tstamp, 'yyyy-MM-dd HH:mm:ss,SSS')}">2020-10-29 12:39:13,299</span>
         to
         <span th:text="${#dates.format(aexRequests[aexRequests.size()-1].tstamp, 'yyyy-MM-dd HH:mm:ss,SSS')}">2020-10-29 12:39:13,299</span>
       </p>
 
       <th:block th:each="req : ${aexRequests}">
-        <div class="row text-white bg-info" 
+        <div class="row text-white bg-info"
              th:class="'row text-white ' + (${req.loginUrl}? 'bg-info':'bg-dark')">
           <div class="col-sm">
             <span th:text="${#dates.format(req.tstamp, 'HH:mm:ss,SSS')}">12:39:13,299</span>
           </div>
           <div class="col-sm-8">
-            <span th:text="${req.method}">POST</span> 
+            <span th:text="${req.method}">POST</span>
             <span th:text="${req.url}">https://northwell.dev.appery.io/apiexpress-api/security/login</span>
           </div>
           <div class="col-sm text-right">
@@ -43,25 +44,25 @@
             <dl class="row" th:each="param : ${req.params}">
               <dt class="col-sm-2" th:text="${param.name}">apiKey</dt>
               <dd class="col-sm-10" th:text="${param.value}"><code>ab0ce6d1-8d24-4c39-b6e7-f9be307dd4bb</code></dd>
-            </dl>              
+            </dl>
           </div>
         </div>
         <div class="row" th:if="${req.user}">
           <div class="col-sm-2">USER</div>
           <div class="col-sm-10">
-            <pre><code th:text="${req.user}">s</code></pre>            
+            <pre><code th:text="${req.user}">s</code></pre>
           </div>
         </div>
         <div class="row" th:if="${req.body}">
           <div class="col-sm-2">BODY:</div>
           <div class="col-sm-10">
-            <pre><code th:text="${req.body}">{}</code></pre>            
+            <pre><code th:text="${req.body}">{}</code></pre>
           </div>
         </div>
         <div class="row" th:if="${req.response}">
           <div class="col-sm-2">RESPONSE:</div>
           <div class="col-sm-10">
-            <pre><code th:text="${req.response}">{}</code></pre>            
+            <pre><code th:text="${req.response}">{}</code></pre>
           </div>
         </div>
         <div class="row">
