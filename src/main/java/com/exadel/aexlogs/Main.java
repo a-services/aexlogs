@@ -33,18 +33,22 @@ import picocli.CommandLine.Parameters;
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.1")
+@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.2")
 public class Main implements Callable<Integer> {
 
-    @Option(names = { "-f", "--file" }, required = true,
+    @Option(names = { "-f", "--file" },
             description = "File names in HTML format received from `exc`.")
     List<String> inputFiles;
+
+    @Option(names = { "-d", "--dir" },
+            description = "Folder with files in HTML format received from `exc`.")
+    String inputFolder;
 
     @Option(names = { "-r", "--rest" }, required = false,
             description = "Track only specified REST requests.")
     List<String> filterRestServices;
 
-    @Parameters(index = "0",
+    @Parameters(index = "0", defaultValue = "aexlogs.html",
             description = "File name in HTML format "
             + "with information about REST requests passing through Standalone API Express.")
     String outputFile;
@@ -81,9 +85,36 @@ public class Main implements Callable<Integer> {
         try {
             out.println("-----------------------");
 
+            /* Verify arguments
+             */
+            if (inputFolder==null && inputFiles==null) {
+                out.println("[ERROR] <inputFiles> or <inputFolder> should be specified.");
+                return 1;
+            }
+
+            /* Add files from input folder
+             */
+            if (inputFolder!=null) {
+                if (inputFiles==null) {
+                    inputFiles = new ArrayList<>();
+                }
+                File[] dirFiles = new File(inputFolder).listFiles();
+                if (dirFiles==null) {
+                    out.println("[ERROR] No log files in iput folder: " + inputFolder);
+                    return 1;
+                } else {
+                    for (File f: dirFiles) {
+                        if (f.isFile() && f.getName().endsWith(".html")) {
+                            inputFiles.add(f.getPath());
+                        }
+                    }
+                }
+            }
+
             /* Process input files
              */
             List<RequestLine> aexRequests = new ArrayList<>();
+            out.println("Input files: " + inputFiles.size());
             for (String inputFile : inputFiles) {
                 process(inputFile);
                 List<RequestLine> rex = new ArrayList(reqLines.values());
