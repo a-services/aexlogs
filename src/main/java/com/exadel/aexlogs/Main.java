@@ -33,12 +33,16 @@ import picocli.CommandLine.Parameters;
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.2")
+@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.3")
 public class Main implements Callable<Integer> {
 
     @Option(names = { "-f", "--file" },
-            description = "File names in HTML format received from `exc`.")
-    List<String> inputFiles;
+            description = "Files in HTML format received from `exc`.")
+    List<String> inputHtmlFiles;
+
+    @Option(names = { "-p", "--plain" },
+            description = "Plain log file.")
+    String inputLogFile;
 
     @Option(names = { "-d", "--dir" },
             description = "Folder with files in HTML format received from `exc`.")
@@ -87,37 +91,46 @@ public class Main implements Callable<Integer> {
 
             /* Verify arguments
              */
-            if (inputFolder==null && inputFiles==null) {
-                out.println("[ERROR] <inputFiles> or <inputFolder> should be specified.");
+            if (inputHtmlFiles==null && inputLogFile==null && inputFolder==null) {
+                out.println("[ERROR] <inputHtmlFiles> or <inputLogFiles> or <inputFolder> should be specified.");
                 return 1;
             }
 
             /* Add files from input folder
              */
+            if (inputHtmlFiles==null) {
+                inputHtmlFiles = new ArrayList<>();
+            }
             if (inputFolder!=null) {
-                if (inputFiles==null) {
-                    inputFiles = new ArrayList<>();
-                }
                 File[] dirFiles = new File(inputFolder).listFiles();
                 if (dirFiles==null) {
-                    out.println("[ERROR] No log files in iput folder: " + inputFolder);
+                    out.println("[ERROR] No log files in input folder: " + inputFolder);
                     return 1;
                 } else {
                     for (File f: dirFiles) {
                         if (f.isFile() && f.getName().endsWith(".html")) {
-                            inputFiles.add(f.getPath());
+                            inputHtmlFiles.add(f.getPath());
                         }
                     }
                 }
             }
 
-            /* Process input files
+            /* Process input html files
              */
             List<RequestLine> aexRequests = new ArrayList<>();
-            out.println("Input files: " + inputFiles.size());
-            for (String inputFile : inputFiles) {
-                process(inputFile);
-                List<RequestLine> rex = new ArrayList(reqLines.values());
+            out.println("Input HTML files: " + inputHtmlFiles.size());
+            for (String inputFile : inputHtmlFiles) {
+                processHtmlFile(inputFile);
+                List<RequestLine> rex = new ArrayList<>(reqLines.values());
+                Collections.sort(rex);
+                aexRequests.addAll(rex);
+            }
+
+            /* Process plain log files
+             */
+            if (inputLogFile!=null) {
+                processLogFile(inputLogFile);
+                List<RequestLine> rex = new ArrayList<>(reqLines.values());
                 Collections.sort(rex);
                 aexRequests.addAll(rex);
             }
@@ -170,11 +183,11 @@ public class Main implements Callable<Integer> {
         return false;
     }
 
-    void process(String inputFile) throws IOException {
+    void processHtmlFile(String inputFile) throws IOException {
 
         /* Load and parse file specified as command-line parameter.
          */
-        out.println("Input file: " + inputFile);
+        out.println("Input HTML file: " + inputFile);
 
         Document doc = Jsoup.parse(new File(inputFile), "UTF-8");
         Element block = doc.select("div.block").get(0);
@@ -187,17 +200,39 @@ public class Main implements Callable<Integer> {
         for (String line : lines) {
             LogLine ll = extractLineNum(line);
             if (ll != null) {
-                if (bodyMode) {
-                    appendBody(ll);
-                } else
-                if (ll.text.contains(SIG_1)) {
-                    openRequest(ll);
-                } else if (ll.text.contains(SIG_2)) {
-                    updateRequest(ll);
-                } else if (ll.text.contains(SIG_3)) {
-                    closeRequest(ll);
-                }
+                processLogLine(ll);
             }
+        }
+    }
+
+    void processLogLine(LogLine ll) {
+        if (bodyMode) {
+            appendBody(ll);
+        } else
+        if (ll.text.contains(SIG_1)) {
+            openRequest(ll);
+        } else if (ll.text.contains(SIG_2)) {
+            updateRequest(ll);
+        } else if (ll.text.contains(SIG_3)) {
+            closeRequest(ll);
+        }
+    }
+
+    void processLogFile(String inputFile) throws IOException {
+
+        out.println("Plain log file: " + inputFile);
+        List<String> lines = Files.readAllLines(Paths.get(inputFile));
+
+        /* Extract request information from log
+         */
+        reqLines = new HashMap<>();
+        bodyMode = false;
+        int k = 0;
+        for (String line : lines) {
+            LogLine ll = new LogLine();
+            ll.lno = ++k;
+            ll.text = line;
+            processLogLine(ll);
         }
     }
 
@@ -356,7 +391,7 @@ public class Main implements Callable<Integer> {
 
         final String END_BODY = "---- End Body Request";
 
-        if (END_BODY.equals(ll.text)) {
+        if (ll.text.endsWith(END_BODY)) {
             bodyMode = false;
             return;
         }
