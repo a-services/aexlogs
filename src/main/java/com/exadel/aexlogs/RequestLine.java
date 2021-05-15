@@ -7,6 +7,21 @@ import java.util.List;
 public class RequestLine implements Comparable<RequestLine> {
 
     private int startLine;
+    private int endLine;
+    private Date tstamp;
+    private String id;
+    private String projectId;
+    private String method;
+    private String url;
+    private String user;
+
+    private List<Param> params = new ArrayList<>();
+
+    private StringBuilder body;
+    private String response;
+
+    /** Execution time */
+    private int millis;
 
     public int getStartLine() {
         return startLine;
@@ -23,20 +38,6 @@ public class RequestLine implements Comparable<RequestLine> {
     public void setEndLine(int endLine) {
         this.endLine = endLine;
     }
-    private int endLine;
-    private Date tstamp;
-    private String id;
-    private String projectId;
-    private String method;
-    private String url;
-    private String user;
-
-    private List<Param> params = new ArrayList<>();
-
-    private StringBuilder body;
-    private String response;
-
-    private int millis;
 
     public String getUser() {
         return user;

@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Date;
 import java.text.MessageFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
+import org.json.JSONObject;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -37,20 +39,36 @@ import picocli.CommandLine.Parameters;
 public class Main implements Callable<Integer> {
 
     @Option(names = { "-f", "--file" },
-            description = "Files in HTML format received from `exc`.")
+            description = "Files for input in HTML format received from `exc`.")
     List<String> inputHtmlFiles;
 
     @Option(names = { "-p", "--plain" },
-            description = "Plain log file.")
+            description = "Plain log file for input.")
     String inputLogFile;
+
+    @Option(names = { "-b", "--brief" },
+            description = "Brief format for output.")
+    boolean briefOutput;
 
     @Option(names = { "-d", "--dir" },
             description = "Folder with files in HTML format received from `exc`.")
     String inputFolder;
 
-    @Option(names = { "-r", "--rest" }, required = false,
+    @Option(names = { "-r", "--rest" },
             description = "Track only specified REST requests.")
     List<String> filterRestServices;
+
+    @Option(names = { "-u", "--user" }, 
+            description = "Track only specified users.")
+    List<String> filterUsers;
+
+    @Option(names = { "-t1", "--timefrom" },
+            description = "Track only after specified time in ISO format [yyyy-MM-ddTHH:mm:ss]")
+    String filterFromTime;
+
+    @Option(names = { "-t2", "--timeto" },
+            description = "Track only before specified time in ISO format [yyyy-MM-ddTHH:mm:ss]")
+    String filterToTime;
 
     @Parameters(index = "0", defaultValue = "aexlogs.html",
             description = "File name in HTML format "
@@ -65,6 +83,10 @@ public class Main implements Callable<Integer> {
 
     TimestampExtractor tse = new TimestampExtractor();
 
+    SimpleDateFormat dfiso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    Date filterFromDate;
+    Date filterToDate;
+    
     /**
      * Collects requests mapped by `requestId`
      */
@@ -141,6 +163,26 @@ public class Main implements Callable<Integer> {
                 aexRequests = aexRequests.stream().filter(this::inFilteredServices).collect(Collectors.toList());
             }
 
+            /* Filter users if needed
+             */
+            if (filterUsers != null) {
+                aexRequests = aexRequests.stream().filter(this::inFilteredUsers).collect(Collectors.toList());
+            }
+
+            /* Filter start time if needed
+             */
+            if (filterFromTime != null) {
+                filterFromDate = dfiso.parse(filterFromTime);
+                aexRequests = aexRequests.stream().filter(this::inFilteredFromDate).collect(Collectors.toList());
+            }
+
+            /* Filter end time if needed
+             */
+            if (filterToTime != null) {
+                filterToDate = dfiso.parse(filterToTime);
+                aexRequests = aexRequests.stream().filter(this::inFilteredToDate).collect(Collectors.toList());
+            }
+
             /* Do not generate report if no aex requests found
              */
             if (aexRequests.size()==0) {
@@ -157,7 +199,9 @@ public class Main implements Callable<Integer> {
             templateEngine.setTemplateResolver(templateResolver);
             Context context = new Context();
             context.setVariable("aexRequests", aexRequests);
-            String report = templateEngine.process("templates/aexlogs-bootstrap.html", context);
+            String report = templateEngine.process(
+                    briefOutput ? "templates/aexlogs-brief.html" : 
+                    "templates/aexlogs-bootstrap.html", context);
 
             /* Save output file
              */
@@ -166,17 +210,54 @@ public class Main implements Callable<Integer> {
             out.println("-----------------------");
             return 0;
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             out.println("[ERROR] " + e.getMessage());
             return 1;
         }
     }
 
     boolean inFilteredServices(RequestLine rex) {
+        if (rex.getUrl() == null) {
+            return false;
+        }
+        String serviceName = removeLastSlash(rex.getUrl());
         Iterator<String> iter = filterRestServices.iterator();
         while (iter.hasNext()) {
-            String serviceName = iter.next();
-            if (rex.getUrl() != null && rex.getUrl().endsWith("/" + serviceName)) {
+            String filterServiceName = removeLastSlash(iter.next());
+            if (serviceName.endsWith("/" + filterServiceName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean inFilteredFromDate(RequestLine rex) {
+        if (rex.getTstamp() == null) {
+            return false;
+        }
+        return rex.getTstamp().after(filterFromDate);
+    }
+
+    boolean inFilteredToDate(RequestLine rex) {
+        if (rex.getTstamp() == null) {
+            return false;
+        }
+        return rex.getTstamp().before(filterToDate);
+    }
+
+    String removeLastSlash(String url) {
+        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    }
+
+    boolean inFilteredUsers(RequestLine rex) {
+        if (rex.getUser() == null) {
+            return false;
+        }
+        String userName = rex.getUser().toLowerCase();
+        Iterator<String> iter = filterUsers.iterator();
+        while (iter.hasNext()) {
+            String filterUserName = iter.next();
+            if (userName.equals(filterUserName.toLowerCase())) {
                 return true;
             }
         }
@@ -393,6 +474,12 @@ public class Main implements Callable<Integer> {
 
         if (ll.text.endsWith(END_BODY)) {
             bodyMode = false;
+
+            if (curReq.isLoginUrl()) {
+                JSONObject json = new JSONObject(curReq.getBody().toString());
+                curReq.setUser(json.getString("username"));
+            }
+
             return;
         }
 
