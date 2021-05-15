@@ -1,16 +1,30 @@
 = Analyze logs from Standalone API Express
 
 ----
-Usage: aexlogs [-hV] -f=<inputFiles> [-f=<inputFiles>]...
-               [-r=<filterRestServices>]... <outputFile>
-      <outputFile>          File name in HTML format with information about
-                              REST requests passing through Standalone API
-                              Express.
-  -f, --file=<inputFiles>   File names in HTML format received from `exc`.
-  -h, --help                Show this help message and exit.
+Usage: aexlogs [-bhV] [-d=<inputFolder>] [-p=<inputLogFile>]
+               [-t1=<filterFromTime>] [-t2=<filterToTime>]
+               [-f=<inputHtmlFiles>]... [-r=<filterRestServices>]...
+               [-u=<filterUsers>]... <outputFile>
+      <outputFile>           File name in HTML format with information about
+                               REST requests passing through Standalone API
+                               Express.
+  -b, --brief                Brief format for output.
+  -d, --dir=<inputFolder>    Folder with files in HTML format received from
+                               `exc`.
+  -f, --file=<inputHtmlFiles>
+                             Files for input in HTML format received from `exc`.
+  -h, --help                 Show this help message and exit.
+  -p, --plain=<inputLogFile> Plain log file for input.
   -r, --rest=<filterRestServices>
-                            Track only specified REST requests.
-  -V, --version             Print version information and exit.
+                             Track only specified REST requests.
+      -t1, --timefrom=<filterFromTime>
+                             Track only after specified time in ISO format
+                               [yyyy-MM-ddTHH:mm:ss]
+      -t2, --timeto=<filterToTime>
+                             Track only before specified time in ISO format
+                               [yyyy-MM-ddTHH:mm:ss]
+  -u, --user=<filterUsers>   Track only specified users.
+  -V, --version              Print version information and exit.
 ----
 
 See also::
