@@ -15,6 +15,10 @@ public class RequestLine implements Comparable<RequestLine> {
     private String url;
     private String user;
 
+    private Long groupCount;
+    private String startLineLink;
+    private String endLineLink;
+
     private List<Param> params = new ArrayList<>();
 
     private StringBuilder body;
@@ -121,6 +125,34 @@ public class RequestLine implements Comparable<RequestLine> {
 
     public void setMillis(int millis) {
         this.millis = millis;
+    }
+
+    public long getGroupId(long groupMs) {
+        return tstamp.getTime() / groupMs;
+    }
+
+    public Long getGroupCount() {
+        return groupCount;
+    }
+
+    public void setGroupCount(Long groupCount) {
+        this.groupCount = groupCount;
+    }
+
+    public String getStartLineLink() {
+        return startLineLink;
+    }
+
+    public void setStartLineLink(String startLineLink) {
+        this.startLineLink = startLineLink;
+    }
+    
+    public String getEndLineLink() {
+        return endLineLink;
+    }
+
+    public void setEndLineLink(String endLineLink) {
+        this.endLineLink = endLineLink;
     }
 
     @Override

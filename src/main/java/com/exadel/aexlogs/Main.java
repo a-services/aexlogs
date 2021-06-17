@@ -7,10 +7,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Date;
-import java.text.MessageFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,14 +18,10 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.Jsoup;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
-import org.json.JSONObject;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -35,7 +30,7 @@ import picocli.CommandLine.Parameters;
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.3")
+@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.4")
 public class Main implements Callable<Integer> {
 
     @Option(names = { "-f", "--file" },
@@ -49,6 +44,16 @@ public class Main implements Callable<Integer> {
     @Option(names = { "-b", "--brief" },
             description = "Brief format for output.")
     boolean briefOutput;
+
+    @Option(names = { "-g", "--group" },
+            description = "Group requests within time intervals, ms.")
+    Long groupMs;
+    
+    /*
+    @Option(names = { "-c", "--chart" },
+            description = "Create chart of given type (serverLoad, responseTime).")
+    String createChart; 
+    */
 
     @Option(names = { "-d", "--dir" },
             description = "Folder with files in HTML format received from `exc`.")
@@ -75,32 +80,19 @@ public class Main implements Callable<Integer> {
             + "with information about REST requests passing through Standalone API Express.")
     String outputFile;
 
-    /* Signatures in log.
-     */
-    final String SIG_1 = "[com.exadel.appery.mobilesrv.api.security.filter.ApiKeyRequestFilter]";
-    final String SIG_2 = "[com.exadel.appery.mobilesrv.api.runtime.ServiceRuntimeRestService]";
-    final String SIG_3 = "[com.exadel.appery.mobilesrv.model.utils.LogHelper]";
 
-    TimestampExtractor tse = new TimestampExtractor();
+
 
     SimpleDateFormat dfiso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     Date filterFromDate;
     Date filterToDate;
     
+    List<String> chartType = Arrays.asList("serverLoad", "responseTime");
+
     /**
      * Collects requests mapped by `requestId`
      */
     Map<String, RequestLine> reqLines;
-
-    /**
-     * Opens special mode to collect request body.
-     */
-    boolean bodyMode;
-
-    /**
-     * Current request used to collect request body.
-     */
-    RequestLine curReq;
 
     public static void main(String[] args) {
         System.exit(new CommandLine(new Main()).execute(args));
@@ -117,6 +109,20 @@ public class Main implements Callable<Integer> {
                 out.println("[ERROR] <inputHtmlFiles> or <inputLogFiles> or <inputFolder> should be specified.");
                 return 1;
             }
+            boolean countGroups = groupMs != null;
+            /*
+            if (createChart != null) {
+                if (chartType.contains(createChart)) {
+                    out.println("[ERROR] Chart type not found: " + createChart);
+                    out.println("        Known chart types: " + String.join(", ", chartType));
+                    return 1;
+                }
+                if (groupMs == null) {
+                    out.println("[ERROR] <groupMs> should be specified for charts.");
+                    return 1;
+                }
+            }
+            */
 
             /* Add files from input folder
              */
@@ -139,20 +145,22 @@ public class Main implements Callable<Integer> {
 
             /* Process input html files
              */
+            reqLines = new HashMap<>();
+            LineProcessor lp = new LineProcessor(reqLines);
             List<RequestLine> aexRequests = new ArrayList<>();
             out.println("Input HTML files: " + inputHtmlFiles.size());
             for (String inputFile : inputHtmlFiles) {
-                processHtmlFile(inputFile);
-                List<RequestLine> rex = new ArrayList<>(reqLines.values());
-                Collections.sort(rex);
-                aexRequests.addAll(rex);
+                lp.processHtmlFile(inputFile);
             }
+            List<RequestLine> rex = new ArrayList<>(reqLines.values());
+            Collections.sort(rex);
+            aexRequests.addAll(rex);
 
             /* Process plain log files
              */
             if (inputLogFile!=null) {
                 processLogFile(inputLogFile);
-                List<RequestLine> rex = new ArrayList<>(reqLines.values());
+                rex = new ArrayList<>(reqLines.values());
                 Collections.sort(rex);
                 aexRequests.addAll(rex);
             }
@@ -185,11 +193,49 @@ public class Main implements Callable<Integer> {
 
             /* Do not generate report if no aex requests found
              */
-            if (aexRequests.size()==0) {
+            if (aexRequests.isEmpty()) {
                 out.println("[ERROR] No AEX requests found");
                 return 1;
             }
             out.println(aexRequests.size() + " AEX request(s) found");
+
+            /* Count requests in groups
+             */
+            if (groupMs != null) {
+                long groupId_1 = 0;
+                long groupCount = 0;
+                RequestLine firstReq = null;
+                for (RequestLine it: aexRequests) {
+                    long groupId_2 = it.getGroupId(groupMs);
+                    if (groupId_1 != groupId_2) {
+                        if (firstReq != null) {
+                            firstReq.setGroupCount(groupCount);
+                        }
+                        firstReq = it;
+                        groupCount = 1;
+                        groupId_1 = groupId_2;
+                    } else {
+                        groupCount++;
+                    }
+                }
+                if (firstReq != null) {
+                    firstReq.setGroupCount(groupCount);
+                }
+            }
+
+            /* Update start/end line links
+             */
+            for (RequestLine it: aexRequests) {
+                ExcFile ef = lp.findExcFile(it.getStartLine());
+                if (ef != null) {
+                    it.setStartLineLink(ef.getPath() + "#" + it.getStartLine());
+                }
+
+                ef = lp.findExcFile(it.getEndLine());
+                if (ef != null) {
+                    it.setEndLineLink(ef.getPath() + "#" + it.getEndLine());
+                }
+            }
 
             /* Generate report
              */
@@ -199,6 +245,7 @@ public class Main implements Callable<Integer> {
             templateEngine.setTemplateResolver(templateResolver);
             Context context = new Context();
             context.setVariable("aexRequests", aexRequests);
+            context.setVariable("countGroups", countGroups);
             String report = templateEngine.process(
                     briefOutput ? "templates/aexlogs-brief.html" : 
                     "templates/aexlogs-bootstrap.html", context);
@@ -211,6 +258,7 @@ public class Main implements Callable<Integer> {
             return 0;
 
         } catch (Exception e) {
+            e.printStackTrace();
             out.println("[ERROR] " + e.getMessage());
             return 1;
         }
@@ -264,41 +312,6 @@ public class Main implements Callable<Integer> {
         return false;
     }
 
-    void processHtmlFile(String inputFile) throws IOException {
-
-        /* Load and parse file specified as command-line parameter.
-         */
-        out.println("Input HTML file: " + inputFile);
-
-        Document doc = Jsoup.parse(new File(inputFile), "UTF-8");
-        Element block = doc.select("div.block").get(0);
-        String[] lines = block.html().split("<br>");
-
-        /* Extract request information from log
-         */
-        reqLines = new HashMap<>();
-        bodyMode = false;
-        for (String line : lines) {
-            LogLine ll = extractLineNum(line);
-            if (ll != null) {
-                processLogLine(ll);
-            }
-        }
-    }
-
-    void processLogLine(LogLine ll) {
-        if (bodyMode) {
-            appendBody(ll);
-        } else
-        if (ll.text.contains(SIG_1)) {
-            openRequest(ll);
-        } else if (ll.text.contains(SIG_2)) {
-            updateRequest(ll);
-        } else if (ll.text.contains(SIG_3)) {
-            closeRequest(ll);
-        }
-    }
-
     void processLogFile(String inputFile) throws IOException {
 
         out.println("Plain log file: " + inputFile);
@@ -307,187 +320,13 @@ public class Main implements Callable<Integer> {
         /* Extract request information from log
          */
         reqLines = new HashMap<>();
-        bodyMode = false;
+        LineProcessor lp = new LineProcessor(reqLines);
         int k = 0;
         for (String line : lines) {
             LogLine ll = new LogLine();
             ll.lno = ++k;
             ll.text = line;
-            processLogLine(ll);
-        }
-    }
-
-    /**
-     * Parse first line that opens request.
-     */
-    void openRequest(LogLine ll) {
-        Date d = tse.extractTimestamp(ll.text);
-        if (d == null) {
-            return;
-        }
-        final MessageFormat mf = new MessageFormat("{0} Starting request for project {1}");
-        int k = ll.text.indexOf(") ");
-        if (k == -1) {
-            return;
-        }
-        try {
-            String msg = ll.text.substring(k + 2);
-            Object[] res = mf.parse(msg);
-            String requestId = (String) res[0];
-            String projectId = (String) res[1];
-            RequestLine req = new RequestLine();
-            req.setStartLine(ll.lno);
-            req.setTstamp(d);
-            req.setId(requestId.trim());
-            req.setProjectId(projectId.trim());
-            reqLines.put(req.getId(), req);
-        } catch (ParseException ex) {
-        }
-    }
-
-    /**
-     * Parse line that updates request information.
-     */
-    void updateRequest(LogLine ll) {
-        int k = ll.text.indexOf(") ");
-        if (k == -1) {
-            return;
-        }
-        String msg = ll.text.substring(k + 2);
-        k = msg.indexOf(" ");
-        if (k == -1) {
-            return;
-        }
-        String requestId = msg.substring(0, k);
-        RequestLine req = reqLines.get(requestId);
-        if (req == null) {
-
-            /* Request with this id not found, create a new one.
-             */
-            Date d = tse.extractTimestamp(ll.text);
-            if (d == null) {
-                return;
-            }
-            req = new RequestLine();
-            req.setStartLine(ll.lno);
-            req.setTstamp(d);
-            req.setId(requestId.trim());
-            reqLines.put(req.getId(), req);
-        }
-        msg = msg.substring(k);
-
-        final String METHOD = " Method: ";
-        final String URL = " Url: ";
-        final String PARAM = " Parameter: ";
-        final String START_BODY = "---- Start Body Request:";
-        final String RESPONSE = " Response: ";
-        final String USER = " User: ";
-
-        if (msg.startsWith(METHOD)) {
-            req.setMethod(msg.substring(METHOD.length()));
-        } else
-        if (msg.startsWith(URL)) {
-            req.setUrl(msg.substring(URL.length()));
-        } else
-        if (msg.startsWith(USER)) {
-            req.setUser(msg.substring(USER.length()));
-        } else
-        if (msg.startsWith(PARAM)) {
-            String p = msg.substring(PARAM.length());
-            k = p.indexOf("=");
-            if (k == -1) {
-                return;
-            }
-            String name = p.substring(0,k);
-            String value = p.substring(k+1);
-            req.getParams().add(new Param(name, value));
-        } else
-        if (msg.endsWith(START_BODY)) {
-            bodyMode = true;
-            curReq = req;
-        } else
-        if (msg.startsWith(RESPONSE)) {
-            req.setResponse(msg.substring(RESPONSE.length()));
-        }
-    }
-
-    /**
-     * Parse last line that closes request.
-     */
-    void closeRequest(LogLine ll) {
-        int k = ll.text.indexOf(") ");
-        if (k == -1) {
-            return;
-        }
-        String msg = ll.text.substring(k + 2);
-        k = msg.indexOf(" ");
-        if (k == -1) {
-            return;
-        }
-        String requestId = msg.substring(0, k);
-        RequestLine req = reqLines.get(requestId);
-        if (req == null) {
-            return;
-        }
-        msg = msg.substring(k);
-
-        final MessageFormat mf = new MessageFormat(" Request. Finished execution of endpoint logic. Time spent {0} millis");
-        try {
-            Object[] res = mf.parse(msg);
-            req.setMillis(Integer.parseInt((String) res[0]));
-            req.setEndLine(ll.lno);
-        } catch (ParseException ex) {
-            return;
-        }
-
-    }
-
-    /**
-     * Transform line with HTML markup into `(line number, message)` pair.
-     */
-    LogLine extractLineNum(String line) {
-        final String SEP = ":</a>";
-        final String CUR = "<span class=\"cur\">";
-        int k = line.indexOf(SEP);
-        if (k == -1) {
-            return null;
-        }
-        int k2 = line.substring(0, k).lastIndexOf(">");
-        if (k2 == -1) {
-            return null;
-        }
-        LogLine result = new LogLine();
-        result.lno = Integer.parseInt(line.substring(k2 + 1, k));
-        result.text = line.substring(k + SEP.length()).trim();
-        if (result.text.startsWith(CUR)) {
-            result.text = result.text.substring(CUR.length(), result.text.length());
-        }
-        return result;
-    }
-
-    /**
-     * Process special mode to collect request body.
-     */
-    void appendBody(LogLine ll) {
-
-        final String END_BODY = "---- End Body Request";
-
-        if (ll.text.endsWith(END_BODY)) {
-            bodyMode = false;
-
-            if (curReq.isLoginUrl()) {
-                JSONObject json = new JSONObject(curReq.getBody().toString());
-                curReq.setUser(json.getString("username"));
-            }
-
-            return;
-        }
-
-        if (curReq.getBody() == null) {
-            curReq.setBody(new StringBuilder());
-            curReq.getBody().append(ll.text);
-        } else {
-            curReq.getBody().append("\n").append(ll.text);
+            lp.processLogLine(ll);
         }
     }
 
