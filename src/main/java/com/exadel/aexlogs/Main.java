@@ -153,6 +153,7 @@ public class Main implements Callable<Integer> {
                 lp.processHtmlFile(inputFile);
             }
             List<RequestLine> rex = new ArrayList<>(reqLines.values());
+            out.println("-- rex.size(): " + rex.size());
             Collections.sort(rex);
             aexRequests.addAll(rex);
 

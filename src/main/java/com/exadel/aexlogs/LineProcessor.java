@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
+import org.json.JSONException;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -79,6 +80,7 @@ public class LineProcessor {
             if (ll != null) {
                 logLines.put(ll.lno, ll);
                 excFile.updateLineInfo(ll);
+                processLogLine(ll);
             }
         }
 
@@ -232,6 +234,7 @@ public class LineProcessor {
         }
 
     }
+
     /**
      * Process special mode to collect request body.
      */
@@ -243,8 +246,17 @@ public class LineProcessor {
             bodyMode = false;
 
             if (curReq.isLoginUrl()) {
-                JSONObject json = new JSONObject(curReq.getBody().toString());
-                curReq.setUser(json.getString("username"));
+                String reqStr = curReq.getBody().toString();
+                final String CUR_SPAN = "<span class=\"cur\">";
+                if (reqStr.startsWith(CUR_SPAN)) {
+                    reqStr = reqStr.substring(CUR_SPAN.length());
+                }
+                try {
+                    JSONObject json = new JSONObject(reqStr);
+                    curReq.setUser(json.getString("username"));
+                } catch (JSONException e) {
+                    out.println("[WARN] Line " + ll.lno + ": Non-JSON request ignored: `" + reqStr + "`");
+                }
             }
 
             return;

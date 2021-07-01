@@ -31,3 +31,4 @@ Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-p=<inputLogFile>]
 See also::
 - link:https://appery.io/api-express/[Standalone API Express]
 - link:https://github.com/a-services/exc[exc]
+- link:https://github.com/a-services/exclogs[exclogs]

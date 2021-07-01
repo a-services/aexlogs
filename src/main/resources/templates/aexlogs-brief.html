@@ -20,6 +20,7 @@
         <!--th>ID</th-->
         <th>METHOD</th>
         <th>URL</th>
+        <th>MS</th>
         <th>USER</th>
         <th th:if="${countGroups}">COUNT</th>
         <!--th>PARAMETERS</th-->
@@ -34,6 +35,7 @@
         <!--td th:text="${req.id}">c5f91a2b-a302-483d-8c35-7e4cca67b47e</td-->
         <td th:text="${req.method}">POST</td>
         <td th:text="${req.url}">https://northwell.dev.appery.io/apiexpress-api/security/login</td>
+        <td th:text="${req.millis}">100</td>
         <td th:text="${req.user}">jdoe</td>
         <td th:if="${req.groupCount}" th:attr="rowspan=${req.groupCount}" th:text="${req.groupCount}">10</td>
         <!--/*--> 
