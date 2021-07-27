@@ -29,6 +29,7 @@ dependencies {
     implementation 'org.thymeleaf:thymeleaf:3.0.11.RELEASE'
     implementation 'org.slf4j:slf4j-simple:1.7.30'
     implementation 'org.json:json:20210307'
+    implementation 'org.mongodb:mongodb-driver-sync:4.3.0'
     testImplementation 'junit:junit:4.13'
 }
 

@@ -30,7 +30,7 @@ import picocli.CommandLine.Parameters;
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.4")
+@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.5")
 public class Main implements Callable<Integer> {
 
     @Option(names = { "-f", "--file" },
@@ -49,6 +49,10 @@ public class Main implements Callable<Integer> {
             description = "Group requests within time intervals, ms.")
     Long groupMs;
     
+    @Option(names = { "-m", "--mongo" },
+    description = "MongoDB connection string.")
+    String mongoUrl; 
+
     /*
     @Option(names = { "-c", "--chart" },
             description = "Create chart of given type (serverLoad, responseTime).")
@@ -236,6 +240,12 @@ public class Main implements Callable<Integer> {
                 if (ef != null) {
                     it.setEndLineLink(ef.getPath() + "#" + it.getEndLine());
                 }
+            }
+
+            /* Save requests in MongoDB
+             */
+            if (mongoUrl != null) {
+                new MongoService(mongoUrl, inputFolder).saveRequests(aexRequests);
             }
 
             /* Generate report

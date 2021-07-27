@@ -1,8 +1,8 @@
 = Analyze logs from Standalone API Express
 
 ----
-Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-p=<inputLogFile>]
-               [-t1=<filterFromTime>] [-t2=<filterToTime>]
+Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-m=<mongoUrl>]
+               [-p=<inputLogFile>] [-t1=<filterFromTime>] [-t2=<filterToTime>]
                [-f=<inputHtmlFiles>]... [-r=<filterRestServices>]...
                [-u=<filterUsers>]... <outputFile>
       <outputFile>           File name in HTML format with information about
@@ -15,6 +15,7 @@ Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-p=<inputLogFile>]
                              Files for input in HTML format received from `exc`.
   -g, --group=<groupMs>      Group requests within time intervals, ms.
   -h, --help                 Show this help message and exit.
+  -m, --mongo=<mongoUrl>     MongoDB connection string.
   -p, --plain=<inputLogFile> Plain log file for input.
   -r, --rest=<filterRestServices>
                              Track only specified REST requests.
