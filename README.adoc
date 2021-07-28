@@ -3,8 +3,8 @@
 ----
 Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-m=<mongoUrl>]
                [-p=<inputLogFile>] [-t1=<filterFromTime>] [-t2=<filterToTime>]
-               [-f=<inputHtmlFiles>]... [-r=<filterRestServices>]...
-               [-u=<filterUsers>]... <outputFile>
+               [-z=<timeZone>] [-f=<inputHtmlFiles>]...
+               [-r=<filterRestServices>]... [-u=<filterUsers>]... <outputFile>
       <outputFile>           File name in HTML format with information about
                                REST requests passing through Standalone API
                                Express.
@@ -27,6 +27,7 @@ Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-m=<mongoUrl>]
                                [yyyy-MM-ddTHH:mm:ss]
   -u, --user=<filterUsers>   Track only specified users.
   -V, --version              Print version information and exit.
+  -z, --timezone=<timeZone>  AEX server timezone in +00:00 format.
 ----
 
 See also::

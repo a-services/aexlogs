@@ -4,30 +4,44 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Extract timestamp from the beginning of the log line
- * in commonly used `yyyy-MM-dd HH:mm:ss.SSS` format.
+ * Extract timestamp from beginning of log line
+ * in the commonly used format `yyyy-MM-dd HH:mm:ss,SSS`.
  *
- * Or you can set your own timestamp format with `setDateFormat()`.
+ * Or you can set your own timestamp format using `setDateFormat()`.
  */
 public class TimestampExtractor {
 
-    String dformat = "yyyy-MM-dd HH:mm:ss,SSS";
-    SimpleDateFormat df = new SimpleDateFormat(dformat);
-    int dfLen = dformat.length();
+    /**
+     * Timestamp format string.
+     */
+    String tstampFmt = "yyyy-MM-dd HH:mm:ss,SSS";
 
-    public void setDateFormat(String dformat) {
-        this.dformat = dformat;
-        df = new SimpleDateFormat(dformat);
-        dfLen = dformat.length();
+    /**
+     * Timezone of API Express server.
+     */
+    public static String timeZone = "+00:00";
+
+    final String TZONE_FMT_SUFFIX = " X";
+
+    /**
+     * We use formatter with explicitly added timezone of API Express server.
+     */
+    SimpleDateFormat df = new SimpleDateFormat(tstampFmt + TZONE_FMT_SUFFIX);
+    int tstampLen = tstampFmt.length();
+
+    public void setDateFormat(String timeStampFmt) {
+        tstampFmt = timeStampFmt;
+        df = new SimpleDateFormat(tstampFmt + TZONE_FMT_SUFFIX);
+        tstampLen = tstampFmt.length();
     }
 
     public Date extractTimestamp(String line) {
-        if (line == null || line.length() < dfLen) {
+        if (line == null || line.length() < tstampLen) {
             return null;
         }
         try {
-            String tstamp = line.substring(0, dfLen);
-            return df.parse(tstamp);
+            String tstamp = line.substring(0, tstampLen);
+            return df.parse(tstamp + " " + timeZone);
 
         } catch (Exception e) {
             return null;

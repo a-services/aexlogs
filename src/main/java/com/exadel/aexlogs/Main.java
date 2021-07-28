@@ -50,8 +50,12 @@ public class Main implements Callable<Integer> {
     Long groupMs;
     
     @Option(names = { "-m", "--mongo" },
-    description = "MongoDB connection string.")
+            description = "MongoDB connection string.")
     String mongoUrl; 
+
+    @Option(names = { "-z", "--timezone" }, defaultValue = "+00:00",
+            description = "AEX server timezone in +00:00 format.")
+    String timeZone; 
 
     /*
     @Option(names = { "-c", "--chart" },
@@ -127,6 +131,12 @@ public class Main implements Callable<Integer> {
                 }
             }
             */
+
+            /* Update timezone
+             */
+            if (timeZone != null) {
+                TimestampExtractor.timeZone = timeZone;
+            }
 
             /* Add files from input folder
              */
