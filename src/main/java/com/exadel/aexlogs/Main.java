@@ -48,19 +48,19 @@ public class Main implements Callable<Integer> {
     @Option(names = { "-g", "--group" },
             description = "Group requests within time intervals, ms.")
     Long groupMs;
-    
+
     @Option(names = { "-m", "--mongo" },
             description = "MongoDB connection string.")
-    String mongoUrl; 
+    String mongoUrl;
 
-    @Option(names = { "-z", "--timezone" }, defaultValue = "+00:00",
+    @Option(names = { "-z", "--timezone" },
             description = "AEX server timezone in +00:00 format.")
-    String timeZone; 
+    String timeZone;
 
     /*
     @Option(names = { "-c", "--chart" },
             description = "Create chart of given type (serverLoad, responseTime).")
-    String createChart; 
+    String createChart;
     */
 
     @Option(names = { "-d", "--dir" },
@@ -71,7 +71,7 @@ public class Main implements Callable<Integer> {
             description = "Track only specified REST requests.")
     List<String> filterRestServices;
 
-    @Option(names = { "-u", "--user" }, 
+    @Option(names = { "-u", "--user" },
             description = "Track only specified users.")
     List<String> filterUsers;
 
@@ -94,7 +94,7 @@ public class Main implements Callable<Integer> {
     SimpleDateFormat dfiso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     Date filterFromDate;
     Date filterToDate;
-    
+
     List<String> chartType = Arrays.asList("serverLoad", "responseTime");
 
     /**
@@ -137,6 +137,7 @@ public class Main implements Callable<Integer> {
             if (timeZone != null) {
                 TimestampExtractor.timeZone = timeZone;
             }
+            out.println("Timezone: " + TimestampExtractor.timeZone);
 
             /* Add files from input folder
              */
@@ -167,7 +168,6 @@ public class Main implements Callable<Integer> {
                 lp.processHtmlFile(inputFile);
             }
             List<RequestLine> rex = new ArrayList<>(reqLines.values());
-            out.println("-- rex.size(): " + rex.size());
             Collections.sort(rex);
             aexRequests.addAll(rex);
 
@@ -268,7 +268,7 @@ public class Main implements Callable<Integer> {
             context.setVariable("aexRequests", aexRequests);
             context.setVariable("countGroups", countGroups);
             String report = templateEngine.process(
-                    briefOutput ? "templates/aexlogs-brief.html" : 
+                    briefOutput ? "templates/aexlogs-brief.html" :
                     "templates/aexlogs-bootstrap.html", context);
 
             /* Save output file

@@ -16,12 +16,13 @@ public class TimestampExtractor {
      */
     String tstampFmt = "yyyy-MM-dd HH:mm:ss,SSS";
 
-    /**
-     * Timezone of API Express server.
-     */
-    public static String timeZone = "+00:00";
+    static final String TZONE_FMT_SUFFIX = " X";
 
-    final String TZONE_FMT_SUFFIX = " X";
+    /**
+     * Timezone string of API Express server in `+00:00` format;
+     */
+    public static String timeZone =
+        new SimpleDateFormat(TZONE_FMT_SUFFIX.trim()).format(new Date());
 
     /**
      * We use formatter with explicitly added timezone of API Express server.
