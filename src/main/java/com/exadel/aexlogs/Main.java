@@ -37,6 +37,10 @@ public class Main implements Callable<Integer> {
             description = "Files for input in HTML format received from `exc`.")
     List<String> inputHtmlFiles;
 
+    @Option(names = { "-e", "--exc" },
+            description = "Files with additional information about exceptions.")
+    List<String> inputExcFiles;
+
     @Option(names = { "-p", "--plain" },
             description = "Plain log file for input.")
     String inputLogFile;
@@ -56,12 +60,6 @@ public class Main implements Callable<Integer> {
     @Option(names = { "-z", "--timezone" },
             description = "AEX server timezone in +00:00 format.")
     String timeZone;
-
-    /*
-    @Option(names = { "-c", "--chart" },
-            description = "Create chart of given type (serverLoad, responseTime).")
-    String createChart;
-    */
 
     @Option(names = { "-d", "--dir" },
             description = "Folder with files in HTML format received from `exc`.")
@@ -118,19 +116,6 @@ public class Main implements Callable<Integer> {
                 return 1;
             }
             boolean countGroups = groupMs != null;
-            /*
-            if (createChart != null) {
-                if (chartType.contains(createChart)) {
-                    out.println("[ERROR] Chart type not found: " + createChart);
-                    out.println("        Known chart types: " + String.join(", ", chartType));
-                    return 1;
-                }
-                if (groupMs == null) {
-                    out.println("[ERROR] <groupMs> should be specified for charts.");
-                    return 1;
-                }
-            }
-            */
 
             /* Update timezone
              */
@@ -168,7 +153,6 @@ public class Main implements Callable<Integer> {
                 lp.processHtmlFile(inputFile);
             }
             List<RequestLine> rex = new ArrayList<>(reqLines.values());
-            Collections.sort(rex);
             aexRequests.addAll(rex);
 
             /* Process plain log files
@@ -176,9 +160,20 @@ public class Main implements Callable<Integer> {
             if (inputLogFile!=null) {
                 processLogFile(inputLogFile);
                 rex = new ArrayList<>(reqLines.values());
-                Collections.sort(rex);
                 aexRequests.addAll(rex);
             }
+
+            /* Process exception lists
+             */
+            if (inputExcFiles != null) {
+                for (String excFile : inputExcFiles) {
+                    aexRequests.addAll(processExceptionList(excFile));
+                }
+            }
+
+            /* Sort requests by timestamp
+             */
+            Collections.sort(aexRequests);
 
             /* Filter requests if needed
              */
@@ -349,6 +344,29 @@ public class Main implements Callable<Integer> {
             ll.text = line;
             lp.processLogLine(ll);
         }
+    }
+
+    List<RequestLine> processExceptionList(String inputFile) throws IOException {
+        out.println("Exception list: " + inputFile);
+        List<String> lines = Files.readAllLines(Paths.get(inputFile));
+
+        /* Each line contains timestamp and exception name
+         */
+        List<RequestLine> result = new ArrayList<>();
+        TimestampExtractor tse = new TimestampExtractor();
+        for (String line : lines) {
+            Date d = tse.extractTimestamp(line);
+            if (d != null) {
+                int k = line.indexOf(" ");
+                if (k >= 0) {
+                    RequestLine req = new RequestLine();
+                    req.setTstamp(d);
+                    req.setUrl(line.substring(tse.tstampLen).trim());
+                    result.add(req);
+                }
+            }
+        }
+        return result;
     }
 
 }

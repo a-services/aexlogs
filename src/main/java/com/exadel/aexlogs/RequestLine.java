@@ -146,7 +146,7 @@ public class RequestLine implements Comparable<RequestLine> {
     public void setStartLineLink(String startLineLink) {
         this.startLineLink = startLineLink;
     }
-    
+
     public String getEndLineLink() {
         return endLineLink;
     }
@@ -157,6 +157,7 @@ public class RequestLine implements Comparable<RequestLine> {
 
     @Override
     public int compareTo(RequestLine req) {
-        return startLine - req.getStartLine();
+        //return startLine - req.getStartLine();
+        return tstamp.compareTo(req.getTstamp());
     }
 }
