@@ -14,6 +14,9 @@
   .bg-exc {
       background-color: silver;
   }
+  .bg-long {
+      background-color: #ffdde5;
+  }
 </style>
 <body>
     <table border=1>
@@ -32,13 +35,19 @@
       </tr>
       <tr th:each="req : ${aexRequests}"
           class="bg-norm"
-          th:class="${req.startLine == 0}? 'bg-exc': (${req.loginUrl}? 'bg-login':'bg-norm')">
-        <td><a th:href="${req.startLineLink}" th:text="${req.startLine}">1</a>-<a th:href="${req.endLineLink}" th:text="${req.endLine}">10</a></td>
+          th:class="${req.startLine == 0}? 'bg-exc': (${req.loginUrl}? 'bg-login': (${req.tooLong}? 'bg-long':'bg-norm'))">
+        <td>
+          <span th:if="${req.startLine != 0}">
+            <a th:href="${req.startLineLink}" th:text="${req.startLine}">1</a>-<a th:href="${req.endLineLink}" th:text="${req.endLine}">10</a>
+          </span>
+        </td>
         <td th:text="${#dates.format(req.tstamp, 'yyyy-MM-dd HH:mm:ss,SSS')}">2020-10-27 11:27:40,234</td>
         <!--td th:text="${req.id}">c5f91a2b-a302-483d-8c35-7e4cca67b47e</td-->
         <td th:text="${req.method}">POST</td>
         <td th:text="${req.url}">https://northwell.dev.appery.io/apiexpress-api/security/login</td>
-        <td th:text="${req.millis}">100</td>
+        <td>
+          <span th:if="${req.startLine != 0}" th:text="${req.millis}">100</span>
+        </td>
         <td th:text="${req.user}">jdoe</td>
         <td th:if="${req.groupCount}" th:attr="rowspan=${req.groupCount}" th:text="${req.groupCount}">10</td>
         <!--/*-->

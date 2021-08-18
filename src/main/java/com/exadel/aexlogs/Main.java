@@ -53,6 +53,10 @@ public class Main implements Callable<Integer> {
             description = "Group requests within time intervals, ms.")
     Long groupMs;
 
+    @Option(names = { "-x", "--maxtime" },
+            description = "Highlight requests in report executing longer than max time, ms.")
+    Long maxTimeMs;
+
     @Option(names = { "-m", "--mongo" },
             description = "MongoDB connection string.")
     String mongoUrl;
@@ -64,6 +68,10 @@ public class Main implements Callable<Integer> {
     @Option(names = { "-d", "--dir" },
             description = "Folder with files in HTML format received from `exc`.")
     String inputFolder;
+
+    @Option(names = { "-l", "--lineurl" },
+            description = "`exc` server url to inspect log lines.")
+    String excLineUrl;
 
     @Option(names = { "-r", "--rest" },
             description = "Track only specified REST requests.")
@@ -123,6 +131,12 @@ public class Main implements Callable<Integer> {
                 TimestampExtractor.timeZone = timeZone;
             }
             out.println("Timezone: " + TimestampExtractor.timeZone);
+
+            /* Update max time
+             */
+            if (maxTimeMs != null) {
+                RequestLine.maxTimeMs = maxTimeMs;
+            }
 
             /* Add files from input folder
              */
@@ -237,11 +251,17 @@ public class Main implements Callable<Integer> {
              */
             for (RequestLine it: aexRequests) {
                 ExcFile ef = lp.findExcFile(it.getStartLine());
+                if (excLineUrl != null) {
+                    it.setStartLineLink(excLineUrl + "&lno=" + it.getStartLine());
+                } else
                 if (ef != null) {
                     it.setStartLineLink(ef.getPath() + "#" + it.getStartLine());
                 }
 
                 ef = lp.findExcFile(it.getEndLine());
+                if (excLineUrl != null) {
+                    it.setEndLineLink(excLineUrl + "&lno=" + it.getEndLine());
+                } else
                 if (ef != null) {
                     it.setEndLineLink(ef.getPath() + "#" + it.getEndLine());
                 }

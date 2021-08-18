@@ -1,9 +1,10 @@
 = Analyze logs from Standalone API Express
 
 ----
-Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-m=<mongoUrl>]
-               [-p=<inputLogFile>] [-t1=<filterFromTime>] [-t2=<filterToTime>]
-               [-z=<timeZone>] [-f=<inputHtmlFiles>]...
+Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-l=<excLineUrl>]
+               [-m=<mongoUrl>] [-p=<inputLogFile>] [-t1=<filterFromTime>]
+               [-t2=<filterToTime>] [-x=<maxTimeMs>] [-z=<timeZone>]
+               [-e=<inputExcFiles>]... [-f=<inputHtmlFiles>]...
                [-r=<filterRestServices>]... [-u=<filterUsers>]... <outputFile>
       <outputFile>           File name in HTML format with information about
                                REST requests passing through Standalone API
@@ -11,10 +12,12 @@ Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-m=<mongoUrl>]
   -b, --brief                Brief format for output.
   -d, --dir=<inputFolder>    Folder with files in HTML format received from
                                `exc`.
+  -e, --exc=<inputExcFiles>  Files with additional information about exceptions.
   -f, --file=<inputHtmlFiles>
                              Files for input in HTML format received from `exc`.
   -g, --group=<groupMs>      Group requests within time intervals, ms.
   -h, --help                 Show this help message and exit.
+  -l, --lineurl=<excLineUrl> `exc` server url to inspect log lines.
   -m, --mongo=<mongoUrl>     MongoDB connection string.
   -p, --plain=<inputLogFile> Plain log file for input.
   -r, --rest=<filterRestServices>
@@ -27,6 +30,8 @@ Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-m=<mongoUrl>]
                                [yyyy-MM-ddTHH:mm:ss]
   -u, --user=<filterUsers>   Track only specified users.
   -V, --version              Print version information and exit.
+  -x, --maxtime=<maxTimeMs>  Highlight requests in report executing longer than
+                               max time, ms.
   -z, --timezone=<timeZone>  AEX server timezone in +00:00 format.
 ----
 

@@ -27,6 +27,9 @@ public class RequestLine implements Comparable<RequestLine> {
     /** Execution time */
     private int millis;
 
+    /** Highlight requests in report executing longer than max time */
+    static public Long maxTimeMs = null;
+
     public int getStartLine() {
         return startLine;
     }
@@ -153,6 +156,10 @@ public class RequestLine implements Comparable<RequestLine> {
 
     public void setEndLineLink(String endLineLink) {
         this.endLineLink = endLineLink;
+    }
+
+    public boolean isTooLong() {
+        return maxTimeMs != null && millis > maxTimeMs;
     }
 
     @Override
