@@ -1,7 +1,7 @@
 = Analyze logs from Standalone API Express
 
 ----
-Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-l=<excLineUrl>]
+Usage: aexlogs [-bhV] [-be] [-d=<inputFolder>] [-g=<groupMs>] [-l=<excLineUrl>]
                [-m=<mongoUrl>] [-p=<inputLogFile>] [-t1=<filterFromTime>]
                [-t2=<filterToTime>] [-x=<maxTimeMs>] [-z=<timeZone>]
                [-e=<inputExcFiles>]... [-f=<inputHtmlFiles>]...
@@ -10,6 +10,7 @@ Usage: aexlogs [-bhV] [-d=<inputFolder>] [-g=<groupMs>] [-l=<excLineUrl>]
                                REST requests passing through Standalone API
                                Express.
   -b, --brief                Brief format for output.
+      -be, --brief-exc       Brief exceptions format for output.
   -d, --dir=<inputFolder>    Folder with files in HTML format received from
                                `exc`.
   -e, --exc=<inputExcFiles>  Files with additional information about exceptions.

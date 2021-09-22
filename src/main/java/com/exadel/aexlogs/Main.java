@@ -49,6 +49,10 @@ public class Main implements Callable<Integer> {
             description = "Brief format for output.")
     boolean briefOutput;
 
+    @Option(names = { "-be", "--brief-exc" },
+            description = "Brief exceptions format for output.")
+    boolean briefExcOutput;
+
     @Option(names = { "-g", "--group" },
             description = "Group requests within time intervals, ms.")
     Long groupMs;
@@ -284,6 +288,7 @@ public class Main implements Callable<Integer> {
             context.setVariable("countGroups", countGroups);
             String report = templateEngine.process(
                     briefOutput ? "templates/aexlogs-brief.html" :
+                    briefExcOutput ? "templates/aexlogs-brief-exc.html" :
                     "templates/aexlogs-bootstrap.html", context);
 
             /* Save output file
