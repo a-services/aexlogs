@@ -2,9 +2,9 @@
 
 ----
 Usage: aexlogs [-bhV] [-be] [-d=<inputFolder>] [-g=<groupMs>] [-l=<excLineUrl>]
-               [-m=<mongoUrl>] [-p=<inputLogFile>] [-t1=<filterFromTime>]
-               [-t2=<filterToTime>] [-x=<maxTimeMs>] [-z=<timeZone>]
-               [-e=<inputExcFiles>]... [-f=<inputHtmlFiles>]...
+               [-m=<mongoUrl>] [-mc=<mongoCollection>] [-p=<inputLogFile>]
+               [-t1=<filterFromTime>] [-t2=<filterToTime>] [-x=<maxTimeMs>]
+               [-z=<timeZone>] [-e=<inputExcFiles>]... [-f=<inputHtmlFiles>]...
                [-r=<filterRestServices>]... [-u=<filterUsers>]... <outputFile>
       <outputFile>           File name in HTML format with information about
                                REST requests passing through Standalone API
@@ -20,6 +20,8 @@ Usage: aexlogs [-bhV] [-be] [-d=<inputFolder>] [-g=<groupMs>] [-l=<excLineUrl>]
   -h, --help                 Show this help message and exit.
   -l, --lineurl=<excLineUrl> `exc` server url to inspect log lines.
   -m, --mongo=<mongoUrl>     MongoDB connection string.
+      -mc, --mongo-coll=<mongoCollection>
+                             MongoDB collection to store requests data.
   -p, --plain=<inputLogFile> Plain log file for input.
   -r, --rest=<filterRestServices>
                              Track only specified REST requests.

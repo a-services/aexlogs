@@ -65,6 +65,10 @@ public class Main implements Callable<Integer> {
             description = "MongoDB connection string.")
     String mongoUrl;
 
+    @Option(names = { "-mc", "--mongo-coll" },
+            description = "MongoDB collection to store requests data.")
+    String mongoCollection;
+
     @Option(names = { "-z", "--timezone" },
             description = "AEX server timezone in +00:00 format.")
     String timeZone;
@@ -274,7 +278,11 @@ public class Main implements Callable<Integer> {
             /* Save requests in MongoDB
              */
             if (mongoUrl != null) {
-                new MongoService(mongoUrl, inputFolder).saveRequests(aexRequests);
+                String collName = mongoCollection;
+                if (collName == null) {
+                    collName = inputFolder;
+                }
+                new MongoService(mongoUrl, collName).saveRequests(aexRequests);
             }
 
             /* Generate report
