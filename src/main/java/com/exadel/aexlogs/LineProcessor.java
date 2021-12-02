@@ -20,19 +20,23 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.Jsoup;
 
+import static com.exadel.aexlogs.TimestampExtractor.fmt;
+
 public class LineProcessor {
 
     /**
      * Opens special mode to collect request body.
      */
     boolean bodyMode = false;
-    
+
     /* Signatures in log.
      */
     static final String SIG_1 = "[com.exadel.appery.mobilesrv.api.security.filter.ApiKeyRequestFilter]";
     static final String SIG_2 = "[com.exadel.appery.mobilesrv.api.runtime.ServiceRuntimeRestService]";
     static final String SIG_3 = "[com.exadel.appery.mobilesrv.model.utils.LogHelper]";
-    
+    static final String CAMEL_ERROR = "Error in camel custom flow:";
+    static final String SERVER_RESTART = ":: Spring Boot ::";
+
     TimestampExtractor tse = new TimestampExtractor();
 
     Map<String, RequestLine> reqLines;
@@ -43,11 +47,19 @@ public class LineProcessor {
     RequestLine curReq;
 
     List<ExcFile> excFiles = new ArrayList<>();
-    
+
     Map<Integer, LogLine> logLines = new HashMap<>();
-    
-    public LineProcessor(Map<String, RequestLine> reqLines) {
+
+    List<String> filterErrors;
+
+    List<RequestLine> serverRestarts;
+
+    public LineProcessor(Map<String, RequestLine> reqLines,
+                         List<String> filterErrors,
+                         List<RequestLine> serverRestarts) {
         this.reqLines = reqLines;
+        this.filterErrors = filterErrors;
+        this.serverRestarts = serverRestarts;
     }
 
     /* Find ExcFile that contains given line.
@@ -105,6 +117,10 @@ public class LineProcessor {
             openRequest(ll);
         } else if (ll.text.contains(SIG_2)) {
             updateRequest(ll);
+        } else if (ll.text.contains(CAMEL_ERROR)) {
+            updateCamelError(ll);
+        } else if (ll.text.contains(SERVER_RESTART)) {
+            updateServerRestart(ll);
         } else if (ll.text.contains(SIG_3)) {
             closeRequest(ll);
         }
@@ -114,7 +130,7 @@ public class LineProcessor {
      * Parse first line that opens request.
      */
     void openRequest(LogLine ll) {
-        Date d = tse.extractTimestamp(ll.text);
+        Date d = TimestampExtractor.extractTimestamp(ll.text);
         if (d == null) {
             return;
         }
@@ -139,6 +155,81 @@ public class LineProcessor {
     }
 
     /**
+     * Parse line that updates Camel error.
+     */
+    void updateCamelError(LogLine ll) {
+        int k = ll.text.indexOf(") ");
+        if (k == -1) {
+            return;
+        }
+        String msg = ll.text.substring(k + 2);
+        k = msg.indexOf(" ");
+        if (k == -1) {
+            return;
+        }
+        String requestId = msg.substring(0, k - 1);
+        RequestLine req = reqLines.get(requestId);
+
+        k = msg.indexOf(CAMEL_ERROR);
+        String error = msg.substring(k + CAMEL_ERROR.length()).trim();
+
+        if (req == null) {
+            out.println("[WARN] Unknown requestId in Camel error: " + requestId);
+            out.println("       Line: " + ll.lno);
+            out.println("       " + error);
+            return;
+        }
+
+        if (errorInFilter(error)) {
+            req.setError(error);
+        }
+    }
+
+    boolean errorInFilter(String error) {
+        if (filterErrors == null) {
+            return true;
+        }
+        for (String e: filterErrors) {
+            if (error.contains(e)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Parse line that indicates server restart.
+     */
+    void updateServerRestart(LogLine ll) {
+        final String RESTART = "SERVER RESTART";
+        Date d = TimestampExtractor.extractTimestamp(ll.text);
+        if (d == null) {
+            return;
+        }
+
+        out.println(RESTART + " found at line " + ll.lno + " on " + fmt(d));
+        /*
+        String tstamp = tse.format(d);
+        // Truncate timezone in tsamp output
+        int tlen = TimestampExtractor.tstampFmt.length();
+        if (tstamp.length() > tlen) {
+            tstamp = tstamp.substring(0, tlen);
+        }
+        out.println(RESTART + " found at line " + ll.lno + " on " + tstamp);
+        */
+
+        if (serverRestarts == null) {
+            return;
+        }
+
+        RequestLine req = new RequestLine();
+        req.setTstamp(d);
+        req.setUrl(RESTART);
+        serverRestarts.add(req);
+    }
+
+
+    /**
      * Parse line that updates request information.
      */
     void updateRequest(LogLine ll) {
@@ -157,7 +248,7 @@ public class LineProcessor {
 
             /* Request with this id not found, create a new one.
              */
-            Date d = tse.extractTimestamp(ll.text);
+            Date d = TimestampExtractor.extractTimestamp(ll.text);
             if (d == null) {
                 return;
             }

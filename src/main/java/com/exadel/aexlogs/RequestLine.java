@@ -14,6 +14,7 @@ public class RequestLine implements Comparable<RequestLine> {
     private String method;
     private String url;
     private String user;
+    private String error;
 
     private Long groupCount;
     private String startLineLink;
@@ -160,6 +161,14 @@ public class RequestLine implements Comparable<RequestLine> {
 
     public boolean isTooLong() {
         return maxTimeMs != null && millis > maxTimeMs;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
     }
 
     @Override

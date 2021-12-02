@@ -22,7 +22,7 @@ public class TestMain {
             "Starting request for project ab0ce6d1-8d24-4c39-b6e7-f9be307dd4bb";
 
         HashMap<String, RequestLine> reqLines = new HashMap<>();
-        LineProcessor lp = new LineProcessor(reqLines);
+        LineProcessor lp = new LineProcessor(reqLines, null, null);
         lp.openRequest(ll);
         assertEquals(reqLines.size(), 1);
         RequestLine req = reqLines.get("c5f91a2b-a302-483d-8c35-7e4cca67b47e");

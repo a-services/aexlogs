@@ -27,19 +27,29 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+import static com.exadel.aexlogs.TimestampExtractor.fmt;
+
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.5")
+@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.6")
 public class Main implements Callable<Integer> {
 
     @Option(names = { "-f", "--file" },
             description = "Files for input in HTML format received from `exc`.")
     List<String> inputHtmlFiles;
 
-    @Option(names = { "-e", "--exc" },
-            description = "Files with additional information about exceptions.")
+    @Option(names = { "-tx", "--exc-timestamps" },
+            description = "Files with additional information about exceptions with timestamps.")
     List<String> inputExcFiles;
+
+    @Option(names = { "-e", "--errors" },
+            description = "Track only requests with errors")
+    boolean errorsOnly;
+
+    @Option(names = { "-ef", "--error-filter" },
+            description = "Track only specified errors.")
+    List<String> filterErrors;
 
     @Option(names = { "-p", "--plain" },
             description = "Plain log file for input.")
@@ -103,8 +113,6 @@ public class Main implements Callable<Integer> {
     String outputFile;
 
 
-
-
     SimpleDateFormat dfiso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     Date filterFromDate;
     Date filterToDate;
@@ -115,6 +123,11 @@ public class Main implements Callable<Integer> {
      * Collects requests mapped by `requestId`
      */
     Map<String, RequestLine> reqLines;
+
+    /**
+     * Collects information about server restarts.
+     */
+    List<RequestLine> serverRestartLines = new ArrayList<>();
 
     public static void main(String[] args) {
         System.exit(new CommandLine(new Main()).execute(args));
@@ -168,7 +181,7 @@ public class Main implements Callable<Integer> {
             /* Process input html files
              */
             reqLines = new HashMap<>();
-            LineProcessor lp = new LineProcessor(reqLines);
+            LineProcessor lp = new LineProcessor(reqLines, filterErrors, serverRestartLines);
             List<RequestLine> aexRequests = new ArrayList<>();
             out.println("Input HTML files: " + inputHtmlFiles.size());
             for (String inputFile : inputHtmlFiles) {
@@ -183,14 +196,6 @@ public class Main implements Callable<Integer> {
                 processLogFile(inputLogFile);
                 rex = new ArrayList<>(reqLines.values());
                 aexRequests.addAll(rex);
-            }
-
-            /* Process exception lists
-             */
-            if (inputExcFiles != null) {
-                for (String excFile : inputExcFiles) {
-                    aexRequests.addAll(processExceptionList(excFile));
-                }
             }
 
             /* Sort requests by timestamp
@@ -223,13 +228,36 @@ public class Main implements Callable<Integer> {
                 aexRequests = aexRequests.stream().filter(this::inFilteredToDate).collect(Collectors.toList());
             }
 
+            /* Filter errors if needed
+             */
+            if (errorsOnly) {
+                aexRequests = aexRequests.stream().filter(this::inFilteredErrors).collect(Collectors.toList());
+            }
+
+            /* Count camel errors.
+             */
+            long camelErrorCount = aexRequests.stream().filter(this::inFilteredErrors).count();
+
+            /* Process exception lists
+             */
+            if (inputExcFiles != null) {
+                for (String excFile : inputExcFiles) {
+                    aexRequests.addAll(processExceptionList(excFile));
+                }
+            }
+            aexRequests.addAll(serverRestartLines);
+
             /* Do not generate report if no aex requests found
              */
             if (aexRequests.isEmpty()) {
                 out.println("[ERROR] No AEX requests found");
                 return 1;
             }
+            out.println("-----------------------");
             out.println(aexRequests.size() + " AEX request(s) found");
+            out.println("Camel errors: " + camelErrorCount);
+            out.println("   Starts at: " + fmt(aexRequests.get(0).getTstamp()));
+            out.println("     Ends at: " + fmt(aexRequests.get(aexRequests.size() - 1).getTstamp()));
 
             /* Count requests in groups
              */
@@ -342,6 +370,14 @@ public class Main implements Callable<Integer> {
         return rex.getTstamp().before(filterToDate);
     }
 
+    boolean inFilteredErrors(RequestLine rex) {
+        return rex.getError() != null;
+    }
+
+    boolean inFilteredExceptions(RequestLine rex) {
+        return (rex.getError() != null) || (rex.getStartLine() == 0);
+    }
+
     String removeLastSlash(String url) {
         return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
@@ -369,7 +405,7 @@ public class Main implements Callable<Integer> {
         /* Extract request information from log
          */
         reqLines = new HashMap<>();
-        LineProcessor lp = new LineProcessor(reqLines);
+        LineProcessor lp = new LineProcessor(reqLines, filterErrors, serverRestartLines);
         int k = 0;
         for (String line : lines) {
             LogLine ll = new LogLine();
@@ -386,15 +422,14 @@ public class Main implements Callable<Integer> {
         /* Each line contains timestamp and exception name
          */
         List<RequestLine> result = new ArrayList<>();
-        TimestampExtractor tse = new TimestampExtractor();
         for (String line : lines) {
-            Date d = tse.extractTimestamp(line);
+            Date d = TimestampExtractor.extractTimestamp(line);
             if (d != null) {
                 int k = line.indexOf(" ");
                 if (k >= 0) {
                     RequestLine req = new RequestLine();
                     req.setTstamp(d);
-                    req.setUrl(line.substring(tse.tstampLen).trim());
+                    req.setUrl(line.substring(TimestampExtractor.tstampLen).trim());
                     result.add(req);
                 }
             }

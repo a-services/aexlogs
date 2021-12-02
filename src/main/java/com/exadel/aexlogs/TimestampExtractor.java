@@ -14,7 +14,7 @@ public class TimestampExtractor {
     /**
      * Timestamp format string.
      */
-    String tstampFmt = "yyyy-MM-dd HH:mm:ss,SSS";
+    static String tstampFmt = "yyyy-MM-dd HH:mm:ss,SSS";
 
     static final String TZONE_FMT_SUFFIX = " X";
 
@@ -27,16 +27,22 @@ public class TimestampExtractor {
     /**
      * We use formatter with explicitly added timezone of API Express server.
      */
-    SimpleDateFormat df = new SimpleDateFormat(tstampFmt + TZONE_FMT_SUFFIX);
-    int tstampLen = tstampFmt.length();
+    static SimpleDateFormat df = new SimpleDateFormat(tstampFmt + TZONE_FMT_SUFFIX);
+    static int tstampLen = tstampFmt.length();
 
-    public void setDateFormat(String timeStampFmt) {
+    /**
+     * Another formatter without timezone.
+     */
+    static SimpleDateFormat dfm = new SimpleDateFormat(tstampFmt);
+
+    public static void setDateFormat(String timeStampFmt) {
         tstampFmt = timeStampFmt;
         df = new SimpleDateFormat(tstampFmt + TZONE_FMT_SUFFIX);
         tstampLen = tstampFmt.length();
+        dfm = new SimpleDateFormat(tstampFmt);
     }
 
-    public Date extractTimestamp(String line) {
+    public static Date extractTimestamp(String line) {
         if (line == null || line.length() < tstampLen) {
             return null;
         }
@@ -49,7 +55,11 @@ public class TimestampExtractor {
         }
     }
 
-    public String format(Date date) {
+    public static String format(Date date) {
         return df.format(date);
+    }
+
+    public static String fmt(Date date) {
+        return dfm.format(date);
     }
 }
