@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,7 @@ import static com.exadel.aexlogs.TimestampExtractor.fmt;
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.6")
+@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.7")
 public class Main implements Callable<Integer> {
 
     @Option(names = { "-f", "--file" },
@@ -54,6 +55,10 @@ public class Main implements Callable<Integer> {
     @Option(names = { "-p", "--plain" },
             description = "Plain log file for input.")
     String inputLogFile;
+
+    @Option(names = { "-pm", "--postman" },
+            description = "Postman collection to create.")
+    String postmanCollectionFile;
 
     @Option(names = { "-b", "--brief" },
             description = "Brief format for output.")
@@ -238,6 +243,14 @@ public class Main implements Callable<Integer> {
              */
             long camelErrorCount = aexRequests.stream().filter(this::inFilteredErrors).count();
 
+            /* Count users
+             */
+            Set<String> users = aexRequests.stream().map(RequestLine::getUser).collect(Collectors.toSet());
+
+            /* Count logins
+             */
+            long numLogins = aexRequests.stream().filter(RequestLine::isLoginUrl).count();
+
             /* Process exception lists
              */
             if (inputExcFiles != null) {
@@ -254,10 +267,12 @@ public class Main implements Callable<Integer> {
                 return 1;
             }
             out.println("-----------------------");
-            out.println(aexRequests.size() + " AEX request(s) found");
-            out.println("Camel errors: " + camelErrorCount);
-            out.println("   Starts at: " + fmt(aexRequests.get(0).getTstamp()));
-            out.println("     Ends at: " + fmt(aexRequests.get(aexRequests.size() - 1).getTstamp()));
+            out.println("       AEX requests: " + aexRequests.size());
+            out.println("              Users: " + users.size());
+            out.println("             Logins: " + numLogins);
+            out.println("       Camel errors: " + camelErrorCount);
+            out.println("          Starts at: " + fmt(aexRequests.get(0).getTstamp()));
+            out.println("            Ends at: " + fmt(aexRequests.get(aexRequests.size() - 1).getTstamp()));
 
             /* Count requests in groups
              */
@@ -327,10 +342,17 @@ public class Main implements Callable<Integer> {
                     briefExcOutput ? "templates/aexlogs-brief-exc.html" :
                     "templates/aexlogs-bootstrap.html", context);
 
+            /* Create Postman collection
+             */
+            if (postmanCollectionFile != null) {
+                new PostmanService().saveRequests(aexRequests, postmanCollectionFile);
+                out.println(" Postman collection: " + postmanCollectionFile);
+            }
+
             /* Save output file
              */
             Files.write(Paths.get(outputFile), report.getBytes());
-            out.println("Output file: " + outputFile);
+            out.println("        Output file: " + outputFile);
             out.println("-----------------------");
             return 0;
 
