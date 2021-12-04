@@ -16,7 +16,7 @@ import static java.lang.System.*;
 
 public class PostmanService {
 
-    final String postmanExt = ".postman_collection.json";
+    public static final String postmanExt = ".postman_collection.json";
 
     final String restSig = "/apiexpress-api/rest/";
     final String securitySig = "/apiexpress-api/security/";
@@ -169,7 +169,7 @@ public class PostmanService {
         for (Param pair : query) {
             result.put(wrapPair(pair.getName(),
                     pair.getName().equals("apiKey") ? "{{" + aexKeyVar + "}}" :
-                    pair.getValue()));
+                    pair.getValue().replaceAll("\\{", "%7B").replaceAll("\\}", "%7D")));
         }
         return result;
     }
@@ -178,6 +178,13 @@ public class PostmanService {
         JSONObject result = new JSONObject();
         result.put("key", key);
         result.put("value", value);
+        /*
+        try {
+            result.put("value", URLEncoder.encode(value, "UTF-8"));
+        } catch (JSONException | UnsupportedEncodingException e) {
+            out.println("[WARN] Cannot encode value: " + value);
+            out.println("       Reason: " + e.getMessage());
+        } */
         return result;
     }
 

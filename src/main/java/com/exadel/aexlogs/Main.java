@@ -57,8 +57,8 @@ public class Main implements Callable<Integer> {
     String inputLogFile;
 
     @Option(names = { "-pm", "--postman" },
-            description = "Postman collection to create.")
-    String postmanCollectionFile;
+            description = "Create Postman collection.")
+    boolean createPostman;
 
     @Option(names = { "-b", "--brief" },
             description = "Brief format for output.")
@@ -344,7 +344,8 @@ public class Main implements Callable<Integer> {
 
             /* Create Postman collection
              */
-            if (postmanCollectionFile != null) {
+            if (createPostman) {
+                String postmanCollectionFile = replaceExtension(outputFile, PostmanService.postmanExt);
                 new PostmanService().saveRequests(aexRequests, postmanCollectionFile);
                 out.println(" Postman collection: " + postmanCollectionFile);
             }
@@ -361,6 +362,11 @@ public class Main implements Callable<Integer> {
             out.println("[ERROR] " + e.getMessage());
             return 1;
         }
+    }
+
+    private String replaceExtension(String fname, String ext) {
+        int k = fname.lastIndexOf(".");
+        return ((k == -1) ? fname : fname.substring(0, k)) + ext;
     }
 
     boolean inFilteredServices(RequestLine rex) {
