@@ -1,8 +1,10 @@
 package com.exadel.aexlogs;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import static java.lang.System.*;
@@ -167,9 +170,19 @@ public class PostmanService {
     JSONArray wrapQuery(List<Param> query) {
         JSONArray result = new JSONArray();
         for (Param pair : query) {
-            result.put(wrapPair(pair.getName(),
-                    pair.getName().equals("apiKey") ? "{{" + aexKeyVar + "}}" :
-                    pair.getValue().replaceAll("\\{", "%7B").replaceAll("\\}", "%7D")));
+            String value = pair.getValue();
+            if (pair.getName().equals("apiKey")) {
+                value = "{{" + aexKeyVar + "}}";
+            } else {
+                try {
+                    value = URLEncoder.encode(pair.getValue(), "UTF-8");
+                } catch (JSONException | UnsupportedEncodingException e) {
+                    out.println("[WARN] Cannot encode value: " + value);
+                    out.println("       Reason: " + e.getMessage());
+                }
+            }
+            // pair.getValue().replaceAll("\\{", "%7B").replaceAll("\\}", "%7D"))
+            result.put(wrapPair(pair.getName(), value));
         }
         return result;
     }
@@ -178,13 +191,6 @@ public class PostmanService {
         JSONObject result = new JSONObject();
         result.put("key", key);
         result.put("value", value);
-        /*
-        try {
-            result.put("value", URLEncoder.encode(value, "UTF-8"));
-        } catch (JSONException | UnsupportedEncodingException e) {
-            out.println("[WARN] Cannot encode value: " + value);
-            out.println("       Reason: " + e.getMessage());
-        } */
         return result;
     }
 
