@@ -33,7 +33,7 @@ import static com.exadel.aexlogs.TimestampExtractor.fmt;
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.7")
+@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.8")
 public class Main implements Callable<Integer> {
 
     @Option(names = { "-f", "--file" },
@@ -103,6 +103,14 @@ public class Main implements Callable<Integer> {
     @Option(names = { "-u", "--user" },
             description = "Track only specified users.")
     List<String> filterUsers;
+
+    @Option(names = { "-hstep", "--histogram-step" },
+            description = "Create CSV file of the distribution of http requests over time with a given step, min.")
+    Long histogramStepMin;
+
+    @Option(names = { "-husers", "--histogram-users" },
+            description = "Separating data in histogram columns by user.")
+    boolean histogramUsers;
 
     @Option(names = { "-t1", "--timefrom" },
             description = "Track only after specified time in ISO format [yyyy-MM-ddTHH:mm:ss]")
@@ -245,7 +253,13 @@ public class Main implements Callable<Integer> {
 
             /* Count users
              */
-            Set<String> users = aexRequests.stream().map(RequestLine::getUser).collect(Collectors.toSet());
+            Set<String> users = aexRequests.stream()
+                .filter(req -> req.getUser() != null)
+                .map(RequestLine::getUser)
+                .collect(Collectors.toSet());
+            if (histogramUsers) {
+                out.println("Users: " + users);
+            }
 
             /* Count logins
              */
@@ -266,13 +280,12 @@ public class Main implements Callable<Integer> {
                 out.println("[ERROR] No AEX requests found");
                 return 1;
             }
+
             out.println("-----------------------");
             out.println("       AEX requests: " + aexRequests.size());
             out.println("              Users: " + users.size());
             out.println("             Logins: " + numLogins);
             out.println("       Camel errors: " + camelErrorCount);
-            out.println("          Starts at: " + fmt(aexRequests.get(0).getTstamp()));
-            out.println("            Ends at: " + fmt(aexRequests.get(aexRequests.size() - 1).getTstamp()));
 
             /* Count requests in groups
              */
@@ -342,12 +355,38 @@ public class Main implements Callable<Integer> {
                     briefExcOutput ? "templates/aexlogs-brief-exc.html" :
                     "templates/aexlogs-bootstrap.html", context);
 
+            /* Filter out restart/exception notes
+             */
+            aexRequests = aexRequests.stream().filter(this::inRealRequests).collect(Collectors.toList());
+
+            /* Do not generate postman or csv if there are no real aex requests
+             */
+            if (aexRequests.isEmpty()) {
+                out.println("[ERROR] No valid AEX requests found");
+                return 1;
+            }
+
+            /* Print start/end dates
+             */
+            Date logStarts = aexRequests.get(0).getTstamp();
+            Date logEnds = aexRequests.get(aexRequests.size() - 1).getTstamp();
+            out.println("          Starts at: " + fmt(logStarts));
+            out.println("            Ends at: " + fmt(logEnds));
+
             /* Create Postman collection
              */
             if (createPostman) {
                 String postmanCollectionFile = replaceExtension(outputFile, PostmanService.postmanExt);
                 new PostmanService().saveRequests(aexRequests, postmanCollectionFile);
                 out.println(" Postman collection: " + postmanCollectionFile);
+            }
+
+            /* Create CSV file with histogram
+             */
+            if (histogramStepMin != null) {
+                String csvFile = replaceExtension(outputFile, ".csv");
+                new HistogramService().saveHisto(aexRequests, csvFile, histogramStepMin, histogramUsers, logStarts, logEnds);
+                out.println("      Histogram CSV: " + csvFile);
             }
 
             /* Save output file
@@ -404,6 +443,10 @@ public class Main implements Callable<Integer> {
 
     boolean inFilteredExceptions(RequestLine rex) {
         return (rex.getError() != null) || (rex.getStartLine() == 0);
+    }
+
+    boolean inRealRequests(RequestLine rex) {
+        return rex.getStartLine() != 0;
     }
 
     String removeLastSlash(String url) {

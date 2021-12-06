@@ -1,12 +1,15 @@
 = Analyze logs from Standalone API Express
 
+== Parameters
+
 ----
-Usage: aexlogs [-behV] [-be] [-d=<inputFolder>] [-g=<groupMs>]
-               [-l=<excLineUrl>] [-m=<mongoUrl>] [-mc=<mongoCollection>]
-               [-p=<inputLogFile>] [-t1=<filterFromTime>] [-t2=<filterToTime>]
-               [-x=<maxTimeMs>] [-z=<timeZone>] [-ef=<filterErrors>]...
-               [-f=<inputHtmlFiles>]... [-r=<filterRestServices>]...
-               [-tx=<inputExcFiles>]... [-u=<filterUsers>]... <outputFile>
+Usage: aexlogs [-behV] [-be] [-husers] [-pm] [-d=<inputFolder>] [-g=<groupMs>]
+               [-hstep=<histogramStepMin>] [-l=<excLineUrl>] [-m=<mongoUrl>]
+               [-mc=<mongoCollection>] [-p=<inputLogFile>]
+               [-t1=<filterFromTime>] [-t2=<filterToTime>] [-x=<maxTimeMs>]
+               [-z=<timeZone>] [-ef=<filterErrors>]... [-f=<inputHtmlFiles>]...
+               [-r=<filterRestServices>]... [-tx=<inputExcFiles>]...
+               [-u=<filterUsers>]... <outputFile>
       <outputFile>           File name in HTML format with information about
                                REST requests passing through Standalone API
                                Express.
@@ -21,11 +24,17 @@ Usage: aexlogs [-behV] [-be] [-d=<inputFolder>] [-g=<groupMs>]
                              Files for input in HTML format received from `exc`.
   -g, --group=<groupMs>      Group requests within time intervals, ms.
   -h, --help                 Show this help message and exit.
+      -hstep, --histogram-step=<histogramStepMin>
+                             Create CSV file of the distribution of http
+                               requests over time with a given step, min.
+      -husers, --histogram-users
+                             Separating data in histogram columns by user.
   -l, --lineurl=<excLineUrl> `exc` server url to inspect log lines.
   -m, --mongo=<mongoUrl>     MongoDB connection string.
       -mc, --mongo-coll=<mongoCollection>
                              MongoDB collection to store requests data.
   -p, --plain=<inputLogFile> Plain log file for input.
+      -pm, --postman         Create Postman collection.
   -r, --rest=<filterRestServices>
                              Track only specified REST requests.
       -t1, --timefrom=<filterFromTime>
@@ -44,7 +53,30 @@ Usage: aexlogs [-behV] [-be] [-d=<inputFolder>] [-g=<groupMs>]
   -z, --timezone=<timeZone>  AEX server timezone in +00:00 format.
 ----
 
-See also::
+== Examples
+
+Create report with http request parameters:
+----
+    aexlogs -p=server.log aexlogs.html
+----
+
+Create brief report on requests in API Express log:
+----
+    aexlogs -p=server.log aexlogs.html --brief
+----
+
+Create Postman collection from requests in API Express log:
+----
+    aexlogs -p=server.log aexlogs.html --postman
+----
+
+Create CSV file with distribution step set to 1 min.
+----
+    aexlogs -p=server.log aexlogs.html --histogram-step=1
+----
+
+== See also
+
 - link:https://appery.io/api-express/[Standalone API Express]
 - link:https://github.com/a-services/exc[exc]
 - link:https://github.com/a-services/exclogs[exclogs]
