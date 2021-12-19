@@ -73,7 +73,7 @@ public class LineProcessor {
         return null;
     }
 
-    void processHtmlFile(String inputFile) throws IOException {
+    void processHtmlFile(String inputFile) throws IOException, ParseException {
 
         /* Load and parse file specified as command-line parameter.
          */
@@ -101,7 +101,7 @@ public class LineProcessor {
         excFiles.add(excFile);
     }
 
-    void processLogLines() {
+    void processLogLines() throws ParseException {
         List<Integer> keys = new ArrayList<>(logLines.keySet());
         Collections.sort(keys);
         for (Integer key: keys) {
@@ -109,7 +109,7 @@ public class LineProcessor {
         }
     }
 
-    void processLogLine(LogLine ll) {
+    void processLogLine(LogLine ll) throws ParseException {
         if (bodyMode) {
             appendBody(ll);
         } else
@@ -157,21 +157,26 @@ public class LineProcessor {
     /**
      * Parse line that updates Camel error.
      */
-    void updateCamelError(LogLine ll) {
+    void updateCamelError(LogLine ll) throws ParseException {
         int k = ll.text.indexOf(") ");
         if (k == -1) {
             return;
         }
         String msg = ll.text.substring(k + 2);
-        k = msg.indexOf(" ");
-        if (k == -1) {
-            return;
-        }
-        String requestId = msg.substring(0, k - 1);
-        RequestLine req = reqLines.get(requestId);
 
+        /* Extract error message
+         */
         k = msg.indexOf(CAMEL_ERROR);
         String error = msg.substring(k + CAMEL_ERROR.length()).trim();
+
+        /* Extract requestId
+         */
+        MessageFormat mf = new MessageFormat("Request {0}.");
+        String reqStr = msg.substring(0, k).trim();
+        //out.println("reqStr: " + reqStr);
+        Object[] res = mf.parse(reqStr);
+        String requestId = (String) res[0];
+        RequestLine req = reqLines.get(requestId);
 
         if (req == null) {
             out.println("[WARN] Unknown requestId in Camel error: " + requestId);

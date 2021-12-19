@@ -113,7 +113,11 @@ public class PostmanService {
             }
 
             if (req.getBody() != null) {
-                request.put("body", wrapBody(req.getBody().toString()));
+                if (isLogin) {
+                    request.put("body", wrapBody("{\"username\": \"{{aex_username}}\", \"password\": \"{{aex_password}}\" }"));
+                } else {
+                    request.put("body", wrapBody(req.getBody().toString()));
+                }
             }
         }
 

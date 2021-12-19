@@ -1,5 +1,6 @@
 package com.exadel.aexlogs;
 
+import java.text.ParseException;
 import java.util.HashMap;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -10,7 +11,7 @@ import static org.junit.Assert.*;
  */
 public class TestMain {
 
-    @Test
+    //@Test
     public void testMain() {
 
         /* Test openRequest()
@@ -91,5 +92,22 @@ public class TestMain {
                 + "Request. Finished execution of endpoint logic. Time spent 20 millis";
         lp.closeRequest(ll);
         assertEquals(req.getMillis(), 20);
+    }
+
+    //@Test
+    public void testCamelError() throws ParseException {
+
+        HashMap<String, RequestLine> reqLines = new HashMap<>();
+        LineProcessor lp = new LineProcessor(reqLines, null, null);
+
+        LogLine ll = new LogLine();
+        ll.text = "2021-12-17 02:25:32,215 "
+                + "INFO  [com.exadel.appery.mobilesrv.api.service.model.runtime.CustomServiceRuntime] "
+                + "(default task-1282) Request 6b3d388b-9729-49ec-ac2b-fe0d47fe4800. "
+                + "Error in camel custom flow: No consumers available on endpoint: "
+                + "Endpoint[direct://rest1d578a32-4bf0-4c9b-90ba-d83917a6c91a_fd7674f1-127f-487b-86e2-ccc4354d7df6]. "
+                + "Exchange[Message: [Body is null]]";
+
+        lp.updateCamelError(ll);
     }
 }

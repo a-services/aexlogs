@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -468,7 +469,7 @@ public class Main implements Callable<Integer> {
         return false;
     }
 
-    void processLogFile(String inputFile) throws IOException {
+    void processLogFile(String inputFile) throws IOException, ParseException {
 
         out.println("Plain log file: " + inputFile);
         List<String> lines = Files.readAllLines(Paths.get(inputFile));
