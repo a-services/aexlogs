@@ -29,7 +29,7 @@ public class RequestLine implements Comparable<RequestLine> {
     private int millis;
 
     /** Highlight requests in report executing longer than max time */
-    static public Long maxTimeMs = null;
+    //static public Long maxTimeMs = null;
 
     public int getStartLine() {
         return startLine;
@@ -159,9 +159,10 @@ public class RequestLine implements Comparable<RequestLine> {
         this.endLineLink = endLineLink;
     }
 
-    public boolean isTooLong() {
-        return maxTimeMs != null && millis > maxTimeMs;
-    }
+    /*public boolean isTooLong() {
+        //return maxTimeMs != null && millis > maxTimeMs;
+        return false;
+    }*/
 
     public String getError() {
         return error;

@@ -3,7 +3,7 @@
 == Parameters
 
 ----
-Usage: aexlogs [-behV] [-be] [-husers] [-pm] [-d=<inputFolder>] [-g=<groupMs>]
+Usage: aexlogs [-behV] [-husers] [-pm] [-d=<inputFolder>] [-g=<groupMs>]
                [-hstep=<histogramStepMin>] [-l=<excLineUrl>] [-m=<mongoUrl>]
                [-mc=<mongoCollection>] [-p=<inputLogFile>]
                [-t1=<filterFromTime>] [-t2=<filterToTime>] [-x=<maxTimeMs>]
@@ -14,7 +14,6 @@ Usage: aexlogs [-behV] [-be] [-husers] [-pm] [-d=<inputFolder>] [-g=<groupMs>]
                                REST requests passing through Standalone API
                                Express.
   -b, --brief                Brief format for output.
-      -be, --brief-exc       Brief exceptions format for output.
   -d, --dir=<inputFolder>    Folder with files in HTML format received from
                                `exc`.
   -e, --errors               Track only requests with errors
@@ -48,8 +47,8 @@ Usage: aexlogs [-behV] [-be] [-husers] [-pm] [-d=<inputFolder>] [-g=<groupMs>]
                                with timestamps.
   -u, --user=<filterUsers>   Track only specified users.
   -V, --version              Print version information and exit.
-  -x, --maxtime=<maxTimeMs>  Highlight requests in report executing longer than
-                               max time, ms.
+  -x, --maxtime=<maxTimeMs>  Track only requests executing longer than max
+                               time, ms.
   -z, --timezone=<timeZone>  AEX server timezone in +00:00 format.
 ----
 

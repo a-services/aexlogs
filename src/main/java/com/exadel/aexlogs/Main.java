@@ -34,7 +34,7 @@ import static com.exadel.aexlogs.TimestampExtractor.fmt;
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.8")
+@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.9")
 public class Main implements Callable<Integer> {
 
     @Option(names = { "-f", "--file" },
@@ -65,16 +65,12 @@ public class Main implements Callable<Integer> {
             description = "Brief format for output.")
     boolean briefOutput;
 
-    @Option(names = { "-be", "--brief-exc" },
-            description = "Brief exceptions format for output.")
-    boolean briefExcOutput;
-
     @Option(names = { "-g", "--group" },
             description = "Group requests within time intervals, ms.")
     Long groupMs;
 
     @Option(names = { "-x", "--maxtime" },
-            description = "Highlight requests in report executing longer than max time, ms.")
+            description = "Track only requests executing longer than max time, ms.")
     Long maxTimeMs;
 
     @Option(names = { "-m", "--mongo" },
@@ -167,12 +163,6 @@ public class Main implements Callable<Integer> {
             }
             out.println("Timezone: " + TimestampExtractor.timeZone);
 
-            /* Update max time
-             */
-            if (maxTimeMs != null) {
-                RequestLine.maxTimeMs = maxTimeMs;
-            }
-
             /* Add files from input folder
              */
             if (inputHtmlFiles==null) {
@@ -246,6 +236,13 @@ public class Main implements Callable<Integer> {
              */
             if (errorsOnly) {
                 aexRequests = aexRequests.stream().filter(this::inFilteredErrors).collect(Collectors.toList());
+            }
+
+            /* Filter max execution time if needed
+             */
+            if (maxTimeMs != null) {
+                //RequestLine.maxTimeMs = maxTimeMs;
+                aexRequests = aexRequests.stream().filter(this::inMaxExecutionTime).collect(Collectors.toList());
             }
 
             /* Count camel errors.
@@ -353,7 +350,6 @@ public class Main implements Callable<Integer> {
             context.setVariable("countGroups", countGroups);
             String report = templateEngine.process(
                     briefOutput ? "templates/aexlogs-brief.html" :
-                    briefExcOutput ? "templates/aexlogs-brief-exc.html" :
                     "templates/aexlogs-bootstrap.html", context);
 
             /* Filter out restart/exception notes
@@ -448,6 +444,10 @@ public class Main implements Callable<Integer> {
 
     boolean inRealRequests(RequestLine rex) {
         return rex.getStartLine() != 0;
+    }
+
+    boolean inMaxExecutionTime(RequestLine rex) {
+        return rex.getMillis() >= maxTimeMs;
     }
 
     String removeLastSlash(String url) {

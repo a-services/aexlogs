@@ -35,7 +35,7 @@
       </tr>
       <tr th:each="req : ${aexRequests}"
           class="bg-norm"
-          th:class="${req.startLine == 0}? 'bg-exc': (${req.loginUrl}? 'bg-login': (${req.tooLong}? 'bg-long':'bg-norm'))">
+          th:class="${req.startLine == 0}? 'bg-exc': (${req.loginUrl}? 'bg-login': 'bg-norm')">
         <td>
           <span th:if="${req.startLine != 0}">
             <a th:href="${req.startLineLink}" th:text="${req.startLine}">1</a>-<a th:href="${req.endLineLink}" th:text="${req.endLine}">10</a>
