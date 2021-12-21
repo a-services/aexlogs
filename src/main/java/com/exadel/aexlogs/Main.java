@@ -370,6 +370,11 @@ public class Main implements Callable<Integer> {
             out.println("          Starts at: " + fmt(logStarts));
             out.println("            Ends at: " + fmt(logEnds));
 
+            /* Find the longest request
+             */
+            int maxTime = aexRequests.stream().map(RequestLine::getMillis).mapToInt(v -> v).max().orElse(0);
+            out.println("       Max time, ms: " + maxTime);
+
             /* Create Postman collection
              */
             if (createPostman) {
