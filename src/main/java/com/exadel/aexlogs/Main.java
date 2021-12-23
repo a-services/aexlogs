@@ -202,10 +202,6 @@ public class Main implements Callable<Integer> {
                 aexRequests.addAll(rex);
             }
 
-            /* Sort requests by timestamp
-             */
-            Collections.sort(aexRequests);
-
             /* Filter requests if needed
              */
             if (filterRestServices != null) {
@@ -338,6 +334,10 @@ public class Main implements Callable<Integer> {
                 }
                 new MongoService(mongoUrl, collName).saveRequests(aexRequests);
             }
+
+            /* Sort requests by timestamp
+             */
+            Collections.sort(aexRequests);
 
             /* Generate report
              */
