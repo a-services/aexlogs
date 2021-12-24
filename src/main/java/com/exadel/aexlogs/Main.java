@@ -34,7 +34,14 @@ import static com.exadel.aexlogs.TimestampExtractor.fmt;
 /**
  * Analyze Standalone AEX logs from exc utility.
  */
-@Command(name = "aexlogs", mixinStandardHelpOptions = true, version = "1.9")
+@Command(header = {
+    "@|cyan              .              |@",
+    "@|cyan              |              |@",
+    "@|cyan  ,-: ,-. . , | ,-. ,-: ,-.  |@",
+    "@|cyan  | | |-'  X  | | | | | `-.  |@",
+    "@|cyan  `-` `-' ' ` ' `-' `-| `-'  |@",
+    "@|cyan                    `-'      |@"
+}, name = "aexlogs", mixinStandardHelpOptions = true, version = "1.9")
 public class Main implements Callable<Integer> {
 
     @Option(names = { "-f", "--file" },
