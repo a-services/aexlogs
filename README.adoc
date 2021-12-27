@@ -1,6 +1,6 @@
 = Analyze logs from Standalone API Express
 
-== Parameters
+== Usage
 
 ----
              .
