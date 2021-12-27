@@ -3,6 +3,12 @@
 == Parameters
 
 ----
+             .
+             |
+ ,-: ,-. . , | ,-. ,-: ,-.
+ | | |-'  X  | | | | | `-.
+ `-` `-' ' ` ' `-' `-| `-'
+                   `-'
 Usage: aexlogs [-behV] [-husers] [-pm] [-d=<inputFolder>] [-g=<groupMs>]
                [-hstep=<histogramStepMin>] [-l=<excLineUrl>] [-m=<mongoUrl>]
                [-mc=<mongoCollection>] [-p=<inputLogFile>]
