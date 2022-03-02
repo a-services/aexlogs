@@ -6,6 +6,8 @@ group = 'com.exadel'
 
 mainClassName = 'com.exadel.aexlogs.Main'
 
+sourceCompatibility = '1.8'
+
 repositories {
     jcenter()
 }

@@ -124,7 +124,7 @@ public class PostmanService {
         /* Save JSON
          */
         try {
-            Files.writeString(outFile, json.toString());
+            Files.write(outFile, json.toString().getBytes());
         } catch (IOException e) {
             out.println("[WARN] Cannot write Postman file: " + postmanCollectionFile);
             out.println("       Reason: " + e.getMessage());
