@@ -41,6 +41,8 @@ import static com.exadel.aexlogs.TimestampExtractor.fmt;
     "@|cyan  | | |-'  X  | | | | | `-.  |@",
     "@|cyan  `-` `-' ' ` ' `-' `-| `-'  |@",
     "@|cyan                    `-'      |@"
+}, footer = {
+    "@|bold,cyan For details see: |@@|bold,cyan,underline https://github.com/a-services/aexlogs |@"
 }, name = "aexlogs", mixinStandardHelpOptions = true, version = "1.9")
 public class Main implements Callable<Integer> {
 

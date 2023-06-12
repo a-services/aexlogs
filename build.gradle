@@ -17,6 +17,7 @@ task fatjar(type: Jar) {
         attributes "Main-Class": "com.exadel.aexlogs.Main"
     }
     baseName = "aexlogs-all"
+    duplicatesStrategy = "include"
     from {
         configurations.compileClasspath.filter{ it.exists() }
             .collect { it.isDirectory() ? it : zipTree(it) }
